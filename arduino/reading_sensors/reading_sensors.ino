@@ -24,6 +24,10 @@
 #define SENSR_TRIG GRAY
 #define SENSR_ECHO WHITE
 
+#define SPEED 450
+#define LEFT_SUM 70 // left is a bit slower, we adjust here 
+#define OUT_OF_RANGE 9999
+
 // time out in milli-secs
 #define TIME_OUT 400
 #define TIME_OUT_MuS (TIME_OUT*1000)
@@ -47,6 +51,15 @@ void setup() {
   
   pinMode(LED, OUTPUT); 
   Serial.println("Setup done");
+
+}
+
+
+void test_motor(){
+ moveAround(400,400, 750); 
+ moveAround(-400,-9400, 750); 
+  
+  
 }
 
 long read_distance(const int trigPin, const int echoPin){
@@ -60,7 +73,7 @@ long read_distance(const int trigPin, const int echoPin){
   duration = pulseIn(echoPin, HIGH, TIME_OUT_MuS); // TIME_OUT is in millis, function excpects micro's
   if(duration == 0){
     // we time-outed
-    distance = 99999;
+    distance = OUT_OF_RANGE;
   }else{
     distance = (duration/2) / 29.1;
     
@@ -69,12 +82,31 @@ long read_distance(const int trigPin, const int echoPin){
 }
 
 
+void moveAround(int left, int right, int duration){
+   int correction;
+   duration = duration/2;
+   correction = LEFT_SUM;
+   if(left<0){
+    correction = -correction; 
+   }
+   for (int i = 0; i <= duration; i++){
+     motors.setLeftSpeed(-left+correction);
+     motors.setRightSpeed(-right);  
+     delay(5);
+     motors.setLeftSpeed(0);
+     motors.setRightSpeed(0);  
+     delay(5);
+   }
+  
+}
+
+
 int led_status = HIGH;
 
 void loop() {
   long front, right, left;
-
-
+  int spd;
+  
   left = read_distance(SENSL_TRIG, SENSL_ECHO);
   Serial.print("L: ");
   Serial.print(left);
@@ -90,25 +122,28 @@ void loop() {
   Serial.print(right);
   Serial.println(" cm");
 
-  
-  
-  
-  motors.setLeftSpeed(400);
-  
-  
-  
-  
-  
-  if(led_status == HIGH){
-    led_status = LOW;
+  if(front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE){
+    Serial.println("SENSORS LOST!");
+    digitalWrite(LED, HIGH);
+ 
+  } else if(front < 20){
+    // rotate a few degrees
+    Serial.println("TURNING");
+    
+    if(right > left){
+      spd = -SPEED;
+    }else{
+      spd = SPEED;
+    }
+    
+    moveAround(spd,-spd, 100);
   }else{
-    led_status = HIGH;
-  }
-  digitalWrite(LED, led_status);
+    Serial.println("GOING ON");
+   moveAround(SPEED,SPEED, 100);
+   }
   
 
-
-  delay(500);
+  
 } 
 
 

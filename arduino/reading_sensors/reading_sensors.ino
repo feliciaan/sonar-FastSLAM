@@ -1,4 +1,5 @@
-
+#include <ZumoMotors.h>
+  
 // pin layout:
 
 #define RED error
@@ -27,7 +28,7 @@
 #define TIME_OUT 400
 #define TIME_OUT_MuS (TIME_OUT*1000)
 
-
+ZumoMotors motors;
 
 void setup() {
   digitalWrite(LED, HIGH);
@@ -89,6 +90,12 @@ void loop() {
   Serial.print(right);
   Serial.println(" cm");
 
+  
+  
+  
+  motors.setLeftSpeed(400);
+  
+  
   
   
   

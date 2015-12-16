@@ -8,7 +8,7 @@ void setup(){
  Serial.begin (9600);
  
  Serial.println("Hi"); 
- bluetooth.begin(38400);
+ bluetooth.begin(9600);
  bluetooth.println("Hello, world?");
 }
 

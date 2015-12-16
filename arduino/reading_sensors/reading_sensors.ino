@@ -1,5 +1,7 @@
 #include <ZumoMotors.h>
 
+#include <SoftwareSerial.h>
+
 // pin layout:
 
 #define RED error
@@ -28,15 +30,33 @@
 #define BLUETOOTH_RXD 5
 
 
-#define SPEED 450
-#define LEFT_SUM 70 // left is a bit slower, we adjust here
+#define SPEED 300
+#define LEFT_SUM (-150) // left is a bit slower, we adjust here
 #define OUT_OF_RANGE 9999
 
 // time out in milli-secs
 #define TIME_OUT 400
 #define TIME_OUT_MuS (TIME_OUT*1000)
 
+#define DEBUG 0
+
 ZumoMotors motors;
+SoftwareSerial bluetooth(BLUETOOTH_TXD, BLUETOOTH_RXD); // RX, TX
+
+
+/**
+   ORDERS:
+   _  ignored
+   H  Halt
+   A  Auto, drive cutely around and tries to avoid obstacles
+   F  Forward speed ahead!
+   f  forward, slow
+   l  Turn left for a tick
+   r  Turn right for a tick
+   B  backwards, full speed
+   b  backwards, slow
+*/
+
 
 void setup() {
   digitalWrite(LED, HIGH);
@@ -52,21 +72,17 @@ void setup() {
   digitalWrite(SENSF_TRIG, LOW);
   digitalWrite(SENSR_TRIG, LOW);
 
+  motors.flipLeftMotor(1);
+  motors.flipRightMotor(1);
 
   pinMode(LED, OUTPUT);
   Serial.println("Setup done");
+  bluetooth.begin(9600);
+  bluetooth.println("Setup done! ");
 
 }
 
-
-void test_motor(){
- moveAround(400,400, 750);
- moveAround(-400,-9400, 750);
-
-
-}
-
-long read_distance(const int trigPin, const int echoPin){
+long read_distance(const int trigPin, const int echoPin) {
   long duration, distance;
 
   digitalWrite(trigPin, LOW);
@@ -75,77 +91,181 @@ long read_distance(const int trigPin, const int echoPin){
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH, TIME_OUT_MuS); // TIME_OUT is in millis, function excpects micro's
-  if(duration == 0){
+  if (duration == 0) {
     // we time-outed
     distance = OUT_OF_RANGE;
-  }else{
-    distance = (duration/2) / 29.1;
+  } else {
+    distance = (duration / 2) / 29.1;
 
   }
   return distance;
 }
 
+void forward() {
+  moveAround(SPEED, SPEED);
+}
 
-void moveAround(int left, int right, int duration){
-   int correction;
-   duration = duration/2;
-   correction = LEFT_SUM;
-   if(left<0){
+void backward() {
+  moveAround(-SPEED, -SPEED);
+}
+
+void turn_left() {
+  moveAround(-SPEED, SPEED);
+}
+
+void turn_right() {
+  moveAround(SPEED, -SPEED);
+}
+
+void halt() {
+  moveAround(0, 0);
+}
+
+int old_left, old_right;
+long last_millis;
+void moveAround(int left, int right) {
+  long new_millis;
+  int correction = LEFT_SUM;
+  if (left < 0) {
     correction = -correction;
-   }
-   for (int i = 0; i <= duration; i++){
-     motors.setLeftSpeed(-left+correction);
-     motors.setRightSpeed(-right);
-     delay(5);
-     motors.setLeftSpeed(0);
-     motors.setRightSpeed(0);
-     delay(5);
-   }
+  } else if (left == 0) {
+    correction = 0;
+  }
+  if (old_left != left || old_right != right) {
+    bluetooth.print("el:");
+    bluetooth.print(left);
+    bluetooth.print("er");
+    bluetooth.print(right);
+    bluetooth.print("cor");
+    bluetooth.print(correction);
+    bluetooth.print("t:");
+
+
+    Serial.print("el:");
+    Serial.print(left);
+    Serial.print("er");
+    Serial.print(right);
+    Serial.print("cor bij links: +");
+    Serial.print(correction);
+    Serial.print("t:");
+
+
+    new_millis = millis();
+    bluetooth.println(new_millis - last_millis);
+    Serial.println(new_millis - last_millis);
+
+
+
+    last_millis = new_millis;
+
+    old_left = left;
+    old_right = right;
+  }
+
+  motors.setLeftSpeed(left + correction);
+  motors.setRightSpeed(right);
+}
+
+
+void auto_move(const int left, const int front, const int right) {
+  int spd;
+  if (front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE) {
+    Serial.println("SENSORS LOST!");
+    digitalWrite(LED, HIGH);
+
+  } else if (front < 40) {
+    // rotate a few degrees
+    Serial.println("TURNING");
+
+    if (right < left) {
+      turn_left();
+    } else {
+      turn_right();
+    }
+  } else {
+    digitalWrite(LED, LOW);
+    forward();
+  }
 
 }
 
 
-int led_status = HIGH;
+// receives orders from bluetooth
+// Returns '_' if no order received
+char receive_orders() {
+  char rd;
+  if (Serial.available()) {
+    return Serial.read();
+  }
+  if (bluetooth.available()) {
+    rd = bluetooth.read();
+    Serial.print("Received: ");
+    Serial.println(rd);
+    return rd;
+  }
+  return '_';
 
+}
+
+
+int last_order = 'A';
 void loop() {
   long front, right, left;
-  int spd;
+  char new_order;
 
   left = read_distance(SENSL_TRIG, SENSL_ECHO);
-  Serial.print("L: ");
-  Serial.print(left);
-  Serial.print(" cm ");
-
   front = read_distance(SENSF_TRIG, SENSF_ECHO);
-  Serial.print("F: ");
-  Serial.print(front);
-  Serial.print(" cm ");
-
   right  = read_distance(SENSR_TRIG, SENSR_ECHO);
-  Serial.print("R: ");
-  Serial.print(right);
-  Serial.println(" cm");
 
-  if(front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE){
-    Serial.println("SENSORS LOST!");
-    digitalWrite(LED, HIGH);
+  if (1) {
+    bluetooth.print("L");
+    bluetooth.print(left);
 
-  } else if(front < 20){
-    // rotate a few degrees
-    Serial.println("TURNING");
 
-    if(right > left){
-      spd = -SPEED;
-    }else{
-      spd = SPEED;
+    bluetooth.print("F");
+    bluetooth.print(front);
+
+    bluetooth.print("R");
+    bluetooth.println(right);
+  }
+
+  if (DEBUG) {
+    Serial.print("L: ");
+    Serial.print(left);
+    Serial.print(" cm ");
+    Serial.print("F: ");
+    Serial.print(front);
+    Serial.print(" cm ");
+    Serial.print("R: ");
+    Serial.print(right);
+    Serial.println(" cm");
+  }
+
+  new_order = receive_orders();
+  if (new_order != '_') {
+    last_order = new_order;
+  } else if (last_order != 'A') {
+    last_order = 'S';
+  }
+
+  if (last_order == 'A') {
+    auto_move(left, front, right);
+  } else if (last_order == 'S') {
+    halt();
+  } else if (last_order == 'z') {
+    if (front > 15) {
+      forward();
+    } else {
+      Serial.println("Emergency break! Something is in the way");
     }
+  } else if (last_order == 's') {
+    backward();
+  } else if (last_order == 'd') {
+    turn_left();
+  } else if (last_order == 'q') {
+    turn_right();
+  }
 
-    moveAround(spd,-spd, 100);
-  }else{
-    Serial.println("GOING ON");
-   moveAround(SPEED,SPEED, 100);
-   }
 
+}
 
-
-} 

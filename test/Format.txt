@@ -1,7 +1,6 @@
 New data format
 ===============
 
-(Post refactor, over bluetooth)
 '# blabla'	Comment, e.g. "setup done", "waiting for your command"
 'L[0-9]*F[0-9]*R[0-9]*t[0-9]*\n'
 	Sensor measurements

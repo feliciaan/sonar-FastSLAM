@@ -1,0 +1,21 @@
+New data format
+===============
+
+(Post refactor, over bluetooth)
+'# blabla'	Comment, e.g. "setup done", "waiting for your command"
+'L[0-9]*F[0-9]*R[0-9]*t[0-9]*\n'
+	Sensor measurements
+	e.g.
+	'L30F15R9999t5'	30 cm on the right
+			15 cm on the front
+			out of range on the right
+				(either very far or very close)
+			time: 5 ms after last engine change
+'el(-?)[0-9]*er(-?)[0-9]*cor(-?)[0-9]*t[0-9]*'
+	Motor update, e.g.
+	'el300er-300cor50t500'
+		Engine Left was put on 300 forward
+		Engine Right put on -300, thus 300 backwrad
+		The left engine has a correction, for calibration
+			cor was actually added to run it (but can be ignored)
+		t 500: 500 ms elapsed after the previous engine change (or boot)

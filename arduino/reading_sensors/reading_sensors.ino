@@ -67,15 +67,16 @@ void setup() {
   Serial.println("Setup done");
   bluetooth.begin(9600);
   bluetooth.println("Setup done! ");
- // test_motors();
+  // test_motors();
   digitalWrite(LED, HIGH);
   delay(1000);
-  last_order = 'A';
+  last_order = 'S';
+  bluetooth.println("Waiting for your command");
   digitalWrite(LED, LOW);
 
 }
 
-void test_motors(){
+void test_motors() {
   Serial.println("Motor test in one sec!");
   delay(500);
   Serial.println("HURRY! DISCONNECT ME");
@@ -180,14 +181,11 @@ void auto_move(const int left, const int front, const int right) {
 
   } else if (front < 40) {
     // rotate a few degrees
-    Serial.println("TURNING");
+    Serial.println("TURNING left");
+    turn_left();
 
-    if (right < left) {
-      turn_left();
-    } else {
-      turn_right();
-    }
   } else {
+    Serial.println("Forward");
     digitalWrite(LED, LOW);
     forward();
   }
@@ -230,7 +228,9 @@ void loop() {
     bluetooth.print(front);
 
     bluetooth.print("R");
-    bluetooth.println(right);
+    bluetooth.print(right);
+    bluetooth.print("t");
+    bluetooth.println(millis() - last_millis);
   }
 
   if (DEBUG) {

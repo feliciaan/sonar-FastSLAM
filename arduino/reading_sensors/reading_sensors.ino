@@ -1,16 +1,16 @@
 #include <ZumoMotors.h>
-  
+
 // pin layout:
 
 #define RED error
 #define BLUE A3
-#define GREEN A4 
+#define GREEN A4
 #define ORANGE A5
 #define YELLOW A1
 #define BLACK error
 //EMPTY
 #define GRAY A4// yeah, we reuse a pin. As long as it's a trigger pin, we'll be
-#define WHITE A2  
+#define WHITE A2
 //EMPTY
 
 #define LED 13
@@ -24,8 +24,12 @@
 #define SENSR_TRIG GRAY
 #define SENSR_ECHO WHITE
 
+#define BLUETOOTH_TXD 4
+#define BLUETOOTH_RXD 5
+
+
 #define SPEED 450
-#define LEFT_SUM 70 // left is a bit slower, we adjust here 
+#define LEFT_SUM 70 // left is a bit slower, we adjust here
 #define OUT_OF_RANGE 9999
 
 // time out in milli-secs
@@ -43,32 +47,32 @@ void setup() {
   pinMode(SENSF_ECHO, INPUT);
   pinMode(SENSR_TRIG, OUTPUT);
   pinMode(SENSR_ECHO, INPUT);
-  
+
   digitalWrite(SENSL_TRIG, LOW);
   digitalWrite(SENSF_TRIG, LOW);
   digitalWrite(SENSR_TRIG, LOW);
-  
-  
-  pinMode(LED, OUTPUT); 
+
+
+  pinMode(LED, OUTPUT);
   Serial.println("Setup done");
 
 }
 
 
 void test_motor(){
- moveAround(400,400, 750); 
- moveAround(-400,-9400, 750); 
-  
-  
+ moveAround(400,400, 750);
+ moveAround(-400,-9400, 750);
+
+
 }
 
 long read_distance(const int trigPin, const int echoPin){
-  long duration, distance;  
-  
+  long duration, distance;
+
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10); 
+  delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH, TIME_OUT_MuS); // TIME_OUT is in millis, function excpects micro's
   if(duration == 0){
@@ -76,7 +80,7 @@ long read_distance(const int trigPin, const int echoPin){
     distance = OUT_OF_RANGE;
   }else{
     distance = (duration/2) / 29.1;
-    
+
   }
   return distance;
 }
@@ -87,17 +91,17 @@ void moveAround(int left, int right, int duration){
    duration = duration/2;
    correction = LEFT_SUM;
    if(left<0){
-    correction = -correction; 
+    correction = -correction;
    }
    for (int i = 0; i <= duration; i++){
      motors.setLeftSpeed(-left+correction);
-     motors.setRightSpeed(-right);  
+     motors.setRightSpeed(-right);
      delay(5);
      motors.setLeftSpeed(0);
-     motors.setRightSpeed(0);  
+     motors.setRightSpeed(0);
      delay(5);
    }
-  
+
 }
 
 
@@ -106,17 +110,17 @@ int led_status = HIGH;
 void loop() {
   long front, right, left;
   int spd;
-  
+
   left = read_distance(SENSL_TRIG, SENSL_ECHO);
   Serial.print("L: ");
   Serial.print(left);
   Serial.print(" cm ");
- 
+
   front = read_distance(SENSF_TRIG, SENSF_ECHO);
   Serial.print("F: ");
   Serial.print(front);
   Serial.print(" cm ");
-  
+
   right  = read_distance(SENSR_TRIG, SENSR_ECHO);
   Serial.print("R: ");
   Serial.print(right);
@@ -125,26 +129,23 @@ void loop() {
   if(front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE){
     Serial.println("SENSORS LOST!");
     digitalWrite(LED, HIGH);
- 
+
   } else if(front < 20){
     // rotate a few degrees
     Serial.println("TURNING");
-    
+
     if(right > left){
       spd = -SPEED;
     }else{
       spd = SPEED;
     }
-    
+
     moveAround(spd,-spd, 100);
   }else{
     Serial.println("GOING ON");
    moveAround(SPEED,SPEED, 100);
    }
-  
 
-  
+
+
 } 
-
-
-

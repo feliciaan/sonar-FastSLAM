@@ -1,5 +1,4 @@
 #include <ZumoMotors.h>
-
 #include <SoftwareSerial.h>
 
 /********************* pin -> color layout and other pins *******************/
@@ -59,9 +58,9 @@
 
 #define SERIAL_SENSOR_UPDATES 0
 #define SERIAL_SPORADIC_SENSOR_UPDATE 1
-#define SERIAL_MOTOR_UPDATES 0
+#define SERIAL_MOTOR_UPDATES 1
 #define SERIAL_AUTO_DEBUG 0
-#define SERIAL_SPORADIC_AUTO_UPDATE 1
+#define SERIAL_SPORADIC_AUTO_UPDATE 0
 
 #define BLUETOOTH_SENSOR_UPDATES 1
 #define BLUETOOTH_SPORADIC_SENSOR_UPDATE 1  
@@ -71,6 +70,7 @@
 
 // disable if someone sends annoying commands while debugging over cable
 #define BLUETOOTH_ACCEPT_ORDERS 1
+
 
 /********************* Variables ***************************/
 
@@ -327,12 +327,12 @@ void auto_move(const int left, const int front, const int right) {
   char* mode;
   long now = millis();
   int send_sporadic = 0;
-  
+
   if (now - last_sporadic_auto > SPORADIC_SENSOR_UPDATE_INTERVAL) {
     last_sporadic_auto = now;
     send_sporadic = 1;
   }
-  
+
 
 
   if (front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE) {
@@ -340,11 +340,11 @@ void auto_move(const int left, const int front, const int right) {
     mode = "invalid input";
   } else {
     // valid input
-    
+
     if (front < 40) {
 
-      // determine turn direction 
-      
+      // determine turn direction
+
       if (millis() - last_move > DIR_CHANGE_TIME) {
         // we can choose freely the direction to turn, as the direction holdon expired
         last_move = millis();
@@ -357,12 +357,12 @@ void auto_move(const int left, const int front, const int right) {
           move_dir = LEFT;
           mode = "turning right";
         }
-        
+
       }else{
         mode = "turning";
       }
       //actually turn
-      
+
       turn(move_dir);
 
     } else {
@@ -378,7 +378,7 @@ void auto_move(const int left, const int front, const int right) {
     Serial.print(move_dir);
     Serial.print(" last rotation moment:");
     Serial.println(last_move);
-    
+
   }
 
   if(BLUETOOTH_AUTO_DEBUG || (send_sporadic && BLUETOOTH_SPORADIC_AUTO_UPDATE)){
@@ -424,8 +424,9 @@ void loop() {
     case 's': backward();                     break;
     case 'd': turn_left();                    break;
     case 'q': turn_right();                   break;
-    default : halt();
+    case 'S': halt();                         break;
+    case ' ': halt();                         break;  
+    default :                                 break;
   }
 
 }
-

@@ -63,7 +63,7 @@
 #define SERIAL_AUTO_DEBUG 0
 #define SERIAL_SPORADIC_AUTO_UPDATE 1
 
-#define BLUETOOTH_SENSOR_UPDATES 0
+#define BLUETOOTH_SENSOR_UPDATES 1
 #define BLUETOOTH_SPORADIC_SENSOR_UPDATE 1  
 #define BLUETOOTH_MOTOR_UPDATES 1
 #define BLUETOOTH_AUTO_DEBUG 0
@@ -85,10 +85,8 @@ int last_order; // what the loop executes
 
 // we keep track of the speeds and report those, each time they change, we send this on to bluetooth
 int old_left_speed, old_right_speed;
-/* the last time motor speed changed. Millis is expressed using the 'millis()'-functions.
-   We use this value as epoch and count both motor changes and measurements starting from this moment
-*/
-long last_motor_change_millis;
+long last_update_time_serial;
+long last_update_time_bluetooth;
 
 void setup() {
   int led_speed = 75;//speed of warning led
@@ -170,7 +168,7 @@ char receive_orders() {
   if (Serial.available()) {
     return Serial.read();
   }
-  if (bluetooth.available()) {
+  if (BLUETOOTH_ACCEPT_ORDERS && bluetooth.available()) {
     rd = bluetooth.read();
     Serial.print("# Received: ");
     Serial.println(rd);
@@ -182,6 +180,8 @@ char receive_orders() {
 
 long last_sporadic = 0;
 void send_sensor_data(int left, int front, int right) {
+  int send_bluetooth = 0;
+  int send_serial = 0;
   long now = millis();
   int send_sporadic = 0;
   if (now - last_sporadic > SPORADIC_SENSOR_UPDATE_INTERVAL) {
@@ -189,19 +189,18 @@ void send_sensor_data(int left, int front, int right) {
     send_sporadic = 1;
   }
 
-
-  if (BLUETOOTH_SENSOR_UPDATES || (send_sporadic && BLUETOOTH_SPORADIC_SENSOR_UPDATE)) {
+  send_bluetooth = BLUETOOTH_SENSOR_UPDATES || (send_sporadic && BLUETOOTH_SPORADIC_SENSOR_UPDATE);
+  if (send_bluetooth) {
     bluetooth.print("L");
     bluetooth.print(left);
     bluetooth.print("F");
     bluetooth.print(front);
     bluetooth.print("R");
     bluetooth.print(right);
-    bluetooth.print("t");
-    bluetooth.println(millis() - last_motor_change_millis);
   }
 
-  if (SERIAL_SENSOR_UPDATES || (send_sporadic && SERIAL_SPORADIC_SENSOR_UPDATE)) {
+  send_serial = SERIAL_SENSOR_UPDATES || (send_sporadic && SERIAL_SPORADIC_SENSOR_UPDATE);
+  if (send_serial) {
   Serial.print("  L: ");
     Serial.print(left);
     Serial.print("cm\t");
@@ -211,9 +210,27 @@ void send_sensor_data(int left, int front, int right) {
     Serial.print("  R: ");
     Serial.print(right);
     Serial.print("cm\t");
-    Serial.print("t");
-    Serial.println(millis() - last_motor_change_millis);
   }
+  send_time(send_serial, send_bluetooth);
+}
+
+
+/**
+ * Sends the time stamp since last update
+ */
+void send_time(int update_serial, int update_bluetooth){
+  int now = millis();
+  if (update_serial){
+    Serial.print("t");
+    Serial.println(now - last_update_time_serial);
+    last_update_time_serial = now;
+  }
+  if (update_bluetooth){
+    bluetooth.print("t");
+    bluetooth.println(now - last_update_time_bluetooth);
+    last_update_time_bluetooth = now;
+  }
+  
 }
 
 
@@ -262,8 +279,6 @@ void test_motors() {
    It keeps track of the timing, resets it, sends motor updates to bluetooth and serial, ...
 */
 void moveAround(int left, int right) {
-  long new_millis;
-
   // correction factor on the left wheel
   int correction = LEFT_SUM;
   if (left < 0) {
@@ -273,8 +288,7 @@ void moveAround(int left, int right) {
   }
 
   if (old_left_speed != left || old_right_speed != right) {
-    new_millis = millis();
-
+    
     if (BLUETOOTH_MOTOR_UPDATES) {
       bluetooth.print("el");
       bluetooth.print(left);
@@ -282,8 +296,6 @@ void moveAround(int left, int right) {
       bluetooth.print(right);
       bluetooth.print("cor");
       bluetooth.print(correction);
-      bluetooth.print("t");
-      bluetooth.println(new_millis - last_motor_change_millis);
     }
 
     if (SERIAL_MOTOR_UPDATES) {
@@ -293,12 +305,8 @@ void moveAround(int left, int right) {
       Serial.print(right);
       Serial.print("cor");
       Serial.print(correction);
-      Serial.print("t");
-      Serial.println(new_millis - last_motor_change_millis);
     }
-
-    // reset the timing
-    last_motor_change_millis = new_millis;
+    send_time(SERIAL_MOTOR_UPDATES, BLUETOOTH_MOTOR_UPDATES);
 
     old_left_speed = left;
     old_right_speed = right;

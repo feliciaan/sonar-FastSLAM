@@ -46,16 +46,36 @@
 #define TIME_OUT 400
 #define TIME_OUT_MuS (TIME_OUT*1000)
 
+
+/********************* Auto move settings *************************************/
+
+// when the algorithm chooses a turning direction, it will keep this turning direction for 5secs, to prevent loops in cornersr
+#define DIR_CHANGE_TIME 5000
+
+
 /********************* Enable/disable output/input sending ********************/
+// send each ... ms a sporadic sensor update
+#define SPORADIC_SENSOR_UPDATE_INTERVAL 1500
+
 #define SERIAL_SENSOR_UPDATES 0
-#define SERIAL_MOTOR_UPDATES 1
-#define BLUETOOTH_SENSOR_UPDATES 1
+#define SERIAL_SPORADIC_SENSOR_UPDATE 1
+#define SERIAL_MOTOR_UPDATES 0
+#define SERIAL_AUTO_DEBUG 0
+#define SERIAL_SPORADIC_AUTO_UPDATE 1
+
+#define BLUETOOTH_SENSOR_UPDATES 0
+#define BLUETOOTH_SPORADIC_SENSOR_UPDATE 1  
 #define BLUETOOTH_MOTOR_UPDATES 1
+#define BLUETOOTH_AUTO_DEBUG 0
+#define BLUETOOTH_SPORADIC_AUTO_UPDATE 0
 
 // disable if someone sends annoying commands while debugging over cable
 #define BLUETOOTH_ACCEPT_ORDERS 1
 
 /********************* Variables ***************************/
+
+#define LEFT 'l'
+#define RIGHT 'r'
 
 ZumoMotors motors;
 SoftwareSerial bluetooth(BLUETOOTH_TXD, BLUETOOTH_RXD); // RX, TX
@@ -97,18 +117,22 @@ void setup() {
   bluetooth.println("# Setup done! ");
   Serial.println("# Setup done");
 
+  char* helpMsg = "# Send: \n# 'a' for auto mode (sticks in this mode until something other is received), \n# 'z' for forward, \n# 's' for backward, \n# 'q' for turning left, \n# 'd' for turning right. \n# (WASD, but on azerty)";
+  bluetooth.println("# Waiting for your command");
+  bluetooth.println(helpMsg);
+  Serial.println("# Waiting for your command");
+  Serial.println(helpMsg);
 
 
   // a second of delay, to give time to disconnect cables etc...
-  for (int i = 0; i < 1500; i += led_speed) {
+  for (int i = 0; i < 500; i += led_speed) {
     digitalWrite(LED, HIGH);
     delay(led_speed);
     digitalWrite(LED, LOW);
     delay(led_speed);
   }
-  last_order = 'S';
-  bluetooth.println("# Waiting for your command");
-  Serial.println("# Waiting for your command");
+  last_order = 's';
+
 
 }
 
@@ -138,8 +162,8 @@ long read_distance_sensor(const int trigPin, const int echoPin) {
 /********************* Order reading and dispatch *******************************************/
 
 /* Receives orders from bluetooth
- * Returns '_' if no order received
- */
+   Returns '_' if no order received
+*/
 
 char receive_orders() {
   char rd;
@@ -156,8 +180,17 @@ char receive_orders() {
 
 }
 
-void send_sensor_data(int left, int front, int right){
-  if (BLUETOOTH_SENSOR_UPDATES) {
+long last_sporadic = 0;
+void send_sensor_data(int left, int front, int right) {
+  long now = millis();
+  int send_sporadic = 0;
+  if (now - last_sporadic > SPORADIC_SENSOR_UPDATE_INTERVAL) {
+    last_sporadic = now;
+    send_sporadic = 1;
+  }
+
+
+  if (BLUETOOTH_SENSOR_UPDATES || (send_sporadic && BLUETOOTH_SPORADIC_SENSOR_UPDATE)) {
     bluetooth.print("L");
     bluetooth.print(left);
     bluetooth.print("F");
@@ -168,16 +201,18 @@ void send_sensor_data(int left, int front, int right){
     bluetooth.println(millis() - last_motor_change_millis);
   }
 
-  if (SERIAL_SENSOR_UPDATES) {
-    Serial.print("L: ");
+  if (SERIAL_SENSOR_UPDATES || (send_sporadic && SERIAL_SPORADIC_SENSOR_UPDATE)) {
+  Serial.print("  L: ");
     Serial.print(left);
     Serial.print("cm\t");
-    Serial.print("F: ");
+    Serial.print("  F: ");
     Serial.print(front);
     Serial.print("cm\t");
-    Serial.print("R: ");
+    Serial.print("  R: ");
     Serial.print(right);
-    Serial.println("cm");
+    Serial.print("cm\t");
+    Serial.print("t");
+    Serial.println(millis() - last_motor_change_millis);
   }
 }
 
@@ -200,6 +235,14 @@ void turn_left() {
 
 void turn_right() {
   moveAround(SPEED, -SPEED);
+}
+
+void turn(int dir) {
+  if (dir == LEFT) {
+    turn_left();
+  } else {
+    turn_right();
+  }
 }
 
 void halt() {
@@ -267,19 +310,76 @@ void moveAround(int left, int right) {
 
 }
 
+char move_dir  = LEFT;
+int last_move = 0;
+long last_sporadic_auto = 0;
 
 void auto_move(const int left, const int front, const int right) {
   int spd;
+  char* mode;
+  long now = millis();
+  int send_sporadic = 0;
+  
+  if (now - last_sporadic_auto > SPORADIC_SENSOR_UPDATE_INTERVAL) {
+    last_sporadic_auto = now;
+    send_sporadic = 1;
+  }
+  
+
+
   if (front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE) {
     digitalWrite(LED, HIGH);
-
-  } else if (front < 40) {
-    // rotate a few degrees
-    turn_left();
-
+    mode = "invalid input";
   } else {
-    digitalWrite(LED, LOW);
-    forward();
+    // valid input
+    
+    if (front < 40) {
+
+      // determine turn direction 
+      
+      if (millis() - last_move > DIR_CHANGE_TIME) {
+        // we can choose freely the direction to turn, as the direction holdon expired
+        last_move = millis();
+        if (right > left) {
+          // there is more space on the right
+          move_dir = RIGHT;
+          mode = "turning left";
+
+        } else {
+          move_dir = LEFT;
+          mode = "turning right";
+        }
+        
+      }else{
+        mode = "turning";
+      }
+      //actually turn
+      
+      turn(move_dir);
+
+    } else {
+      mode = "going forward";
+      forward();
+    }
+  }
+
+  if(SERIAL_AUTO_DEBUG || (send_sporadic && SERIAL_SPORADIC_AUTO_UPDATE)){
+    Serial.print("# auto-mode: ");
+    Serial.print(mode);
+    Serial.print(" last rotation:");
+    Serial.print(move_dir);
+    Serial.print(" last rotation moment:");
+    Serial.println(last_move);
+    
+  }
+
+  if(BLUETOOTH_AUTO_DEBUG || (send_sporadic && BLUETOOTH_SPORADIC_AUTO_UPDATE)){
+    bluetooth.print("# auto-mode: ");
+    bluetooth.print(mode);
+    bluetooth.print(" last rotation:");
+    bluetooth.print(move_dir);
+    bluetooth.print(" last rotation moment:");
+    bluetooth.println(last_move);
   }
 
 }
@@ -301,18 +401,17 @@ void loop() {
   send_sensor_data(left, front, right);
 
   new_order = receive_orders();
-  if(new_order == '_') {
+  if (new_order == '_') {
     // no order received this tick
     // the default order is 'halt', only if we are in auto mode, we continue auto mode
-    if (last_order == 'A'){
-      new_order = 'A';
-    } 
+    if (last_order == 'a') {
+      new_order = 'a';
+    }
   }
   last_order = new_order;
 
-  switch(last_order){
-    case 'A': auto_move(left, front, right);  break;
-    case 'H': halt();                         break;
+  switch (last_order) {
+    case 'a': auto_move(left, front, right);  break;
     case 'z': forward();                      break;
     case 's': backward();                     break;
     case 'd': turn_left();                    break;

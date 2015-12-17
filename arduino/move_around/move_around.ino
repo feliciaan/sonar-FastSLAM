@@ -35,7 +35,7 @@
 
 /********************* motor speeds ******************************************/
 #define SPEED 300
-#define LEFT_SUM (-35) // left is a bit slower, we adjust here
+#define LEFT_SUM (-25) // left is a bit slower, we adjust here
 
 
 /********************* Sensor settings ***************************************/
@@ -49,21 +49,21 @@
 /********************* Auto move settings *************************************/
 
 // when the algorithm chooses a turning direction, it will keep this turning direction for 5secs, to prevent loops in cornersr
-#define DIR_CHANGE_TIME 5000
+#define DIR_CHANGE_TIME 2500
 
 
 /********************* Enable/disable output/input sending ********************/
 // send each ... ms a sporadic sensor update
-#define SPORADIC_SENSOR_UPDATE_INTERVAL 1500
+#define SPORADIC_SENSOR_UPDATE_INTERVAL 1000
 
 #define SERIAL_SENSOR_UPDATES 0
 #define SERIAL_SPORADIC_SENSOR_UPDATE 1
-#define SERIAL_MOTOR_UPDATES 1
+#define SERIAL_MOTOR_UPDATES 0
 #define SERIAL_AUTO_DEBUG 0
-#define SERIAL_SPORADIC_AUTO_UPDATE 0
+#define SERIAL_SPORADIC_AUTO_UPDATE 1
 
 #define BLUETOOTH_SENSOR_UPDATES 1
-#define BLUETOOTH_SPORADIC_SENSOR_UPDATE 1  
+#define BLUETOOTH_SPORADIC_SENSOR_UPDATE 1
 #define BLUETOOTH_MOTOR_UPDATES 1
 #define BLUETOOTH_AUTO_DEBUG 0
 #define BLUETOOTH_SPORADIC_AUTO_UPDATE 0
@@ -71,6 +71,7 @@
 // disable if someone sends annoying commands while debugging over cable
 #define BLUETOOTH_ACCEPT_ORDERS 1
 
+#define START_MODE 't'
 
 /********************* Variables ***************************/
 
@@ -116,20 +117,37 @@ void setup() {
   Serial.println("# Setup done");
 
   char* helpMsg = "# Send: \n# 'a' for auto mode (sticks in this mode until something other is received), \n# 'z' for forward, \n# 's' for backward, \n# 'q' for turning left, \n# 'd' for turning right. \n# (WASD, but on azerty)";
-  bluetooth.println("# Waiting for your command");
   bluetooth.println(helpMsg);
-  Serial.println("# Waiting for your command");
   Serial.println(helpMsg);
 
 
   // a second of delay, to give time to disconnect cables etc...
-  for (int i = 0; i < 500; i += led_speed) {
-    digitalWrite(LED, HIGH);
-    delay(led_speed);
-    digitalWrite(LED, LOW);
-    delay(led_speed);
+  if (START_MODE == 'a' || START_MODE == 't') {
+    for (int i = 0; i < 1000; i += led_speed) {
+      digitalWrite(LED, HIGH);
+      delay(led_speed);
+      digitalWrite(LED, LOW);
+      delay(led_speed);
+    }
   }
-  last_order = 's';
+  digitalWrite(LED, LOW);
+  Serial.print("# Waiting for your command, now in mode ");
+  Serial.println(START_MODE);
+  if (BLUETOOTH_ACCEPT_ORDERS) {
+    bluetooth.print("# Waiting for your command, now in mode ");
+  } else {
+    bluetooth.print("# Bluetooth orders disabled. Now in mode ");
+  }
+  bluetooth.println(START_MODE);
+  last_order = START_MODE;
+  send_time(1, 1);
+
+  if (START_MODE == 't') {
+    forward();
+    delay(1000);
+    halt();
+    
+  }
 
 
 }
@@ -201,7 +219,7 @@ void send_sensor_data(int left, int front, int right) {
 
   send_serial = SERIAL_SENSOR_UPDATES || (send_sporadic && SERIAL_SPORADIC_SENSOR_UPDATE);
   if (send_serial) {
-  Serial.print("  L: ");
+    Serial.print("  L: ");
     Serial.print(left);
     Serial.print("cm\t");
     Serial.print("  F: ");
@@ -216,21 +234,21 @@ void send_sensor_data(int left, int front, int right) {
 
 
 /**
- * Sends the time stamp since last update
- */
-void send_time(int update_serial, int update_bluetooth){
+   Sends the time stamp since last update
+*/
+void send_time(int update_serial, int update_bluetooth) {
   int now = millis();
-  if (update_serial){
+  if (update_serial) {
     Serial.print("t");
     Serial.println(now - last_update_time_serial);
     last_update_time_serial = now;
   }
-  if (update_bluetooth){
+  if (update_bluetooth) {
     bluetooth.print("t");
     bluetooth.println(now - last_update_time_bluetooth);
     last_update_time_bluetooth = now;
   }
-  
+
 }
 
 
@@ -288,7 +306,7 @@ void moveAround(int left, int right) {
   }
 
   if (old_left_speed != left || old_right_speed != right) {
-    
+
     if (BLUETOOTH_MOTOR_UPDATES) {
       bluetooth.print("el");
       bluetooth.print(left);
@@ -339,15 +357,17 @@ void auto_move(const int left, const int front, const int right) {
     digitalWrite(LED, HIGH);
     mode = "invalid input";
   } else {
+    digitalWrite(LED, LOW);
     // valid input
 
-    if (front < 40) {
+    if (front < 10) {
 
       // determine turn direction
 
       if (millis() - last_move > DIR_CHANGE_TIME) {
         // we can choose freely the direction to turn, as the direction holdon expired
         last_move = millis();
+        Serial.println("TURNING!");
         if (right > left) {
           // there is more space on the right
           move_dir = RIGHT;
@@ -358,7 +378,7 @@ void auto_move(const int left, const int front, const int right) {
           mode = "turning right";
         }
 
-      }else{
+      } else {
         mode = "turning";
       }
       //actually turn
@@ -371,17 +391,17 @@ void auto_move(const int left, const int front, const int right) {
     }
   }
 
-  if(SERIAL_AUTO_DEBUG || (send_sporadic && SERIAL_SPORADIC_AUTO_UPDATE)){
+  if (SERIAL_AUTO_DEBUG || (send_sporadic && SERIAL_SPORADIC_AUTO_UPDATE)) {
     Serial.print("# auto-mode: ");
-    Serial.print(mode);
+    Serial.println(mode);
     Serial.print(" last rotation:");
-    Serial.print(move_dir);
+    Serial.println(move_dir);
     Serial.print(" last rotation moment:");
     Serial.println(last_move);
 
   }
 
-  if(BLUETOOTH_AUTO_DEBUG || (send_sporadic && BLUETOOTH_SPORADIC_AUTO_UPDATE)){
+  if (BLUETOOTH_AUTO_DEBUG || (send_sporadic && BLUETOOTH_SPORADIC_AUTO_UPDATE)) {
     bluetooth.print("# auto-mode: ");
     bluetooth.print(mode);
     bluetooth.print(" last rotation:");
@@ -422,10 +442,12 @@ void loop() {
     case 'a': auto_move(left, front, right);  break;
     case 'z': forward();                      break;
     case 's': backward();                     break;
-    case 'd': turn_left();                    break;
-    case 'q': turn_right();                   break;
-    case 'S': halt();                         break;
-    case ' ': halt();                         break;  
+    case 'd': turn(LEFT);                     break;
+    case 'q': turn(RIGHT);                    break;
+    case 't': test_motors();                  break;
+    case 'x':
+    case 'S':
+    case ' ': halt();                         break;
     default :                                 break;
   }
 

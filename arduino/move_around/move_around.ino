@@ -1,5 +1,6 @@
 #include <ZumoMotors.h>
 #include <SoftwareSerial.h>
+#
 
 /********************* pin -> color layout and other pins *******************/
 /*** On the jumper ***/
@@ -132,13 +133,13 @@ void setup() {
   }
   digitalWrite(LED, LOW);
   Serial.print("# Waiting for your command, now in mode ");
-  Serial.println(START_MODE);
+  Serial.print(START_MODE);
   if (BLUETOOTH_ACCEPT_ORDERS) {
     bluetooth.print("# Waiting for your command, now in mode ");
   } else {
     bluetooth.print("# Bluetooth orders disabled. Now in mode ");
   }
-  bluetooth.println(START_MODE);
+  bluetooth.print(START_MODE);
   last_order = START_MODE;
   send_time(1, 1);
 

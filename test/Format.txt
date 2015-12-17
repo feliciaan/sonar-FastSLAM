@@ -14,7 +14,7 @@ New data format
 	Motor update, e.g.
 	'el300er-300cor50t500'
 		Engine Left was put on 300 forward
-		Engine Right put on -300, thus 300 backwrad
+		Engine Right put on -300, thus 300 backward
 		The left engine has a correction, for calibration
 			cor was actually added to run it (but can be ignored)
 		t 500: 500 ms elapsed after the previous engine change (or boot)

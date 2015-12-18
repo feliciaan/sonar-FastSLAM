@@ -15,7 +15,6 @@ class SerialWrapper():
             self.serial_connection.write(bytes(var, 'utf-8'))
 
     def readline(self):
-        print('readline')
         if self.serial_connection:
             line = self.serial_connection.readline()
             return line.decode('utf-8').strip() if line.strip() != b'' else None
@@ -25,27 +24,6 @@ class SerialWrapper():
         if self.serial_connection:
             self.serial_connection.close()
 
-def parse_message(message):
-    if message[0] == 'L':
-        return parse_sensor_message(message)
-    elif message[0] == 'e':
-        return parse_motor_message(message)
-
-def parse_sensor_message(message):
-    before, after = message.split('F')
-    left_sensor = before.split('L')[-1]
-    front_sensor, after = after.split('R')
-    right_sensor, timestamp = after.split('t')
-
-    return (SENSOR, int(left_sensor), int(front_sensor), int(right_sensor), int(timestamp))
-
-def parse_motor_message(message):
-    message = message[2:]
-    left_motor, other = message.split('er')
-    right_motor, other = other.split('cor')
-    correction, timestamp = other.split('t')
-
-    return (MOTOR, int(left_motor), int(right_motor), int(correction), int(timestamp))
 
 ser = SerialWrapper()
 class InputThread(Thread):
@@ -58,7 +36,7 @@ class InputThread(Thread):
         while(not self.stopped):
             message = ser.readline()
             if message:
-                print(parse_message(message))
+                yield message
 
 
 inputThread = InputThread()

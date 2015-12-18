@@ -1,1 +1,1 @@
-pip install git+https://github.com/pyserial/pyserial  --upgrade
+pyserial git+https://github.com/pyserial/pyserial

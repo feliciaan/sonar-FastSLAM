@@ -13,6 +13,7 @@ def calc_weight(measurements, pose, map_):
             continue
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
+        # TODO: what if no expected distance is known? Fixed -> weight
         expected_distance = \
             map_.distance_to_closest_object_in_cone(sensor_pose, CONE_ANGLE)
         probability *= _prob_of_distances(measured_dist, expected_distance)

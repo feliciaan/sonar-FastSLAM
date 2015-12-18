@@ -1,5 +1,6 @@
 #include <ZumoMotors.h>
 #include <SoftwareSerial.h>
+#
 
 /********************* pin -> color layout and other pins *******************/
 /*** On the jumper ***/
@@ -43,7 +44,7 @@
 #define OUT_OF_RANGE 9999
 // time out in milli-secs
 #define TIME_OUT 400
-#define TIME_OUT_MuS (TIME_OUT*1000)
+#define TIME_OUT_MuS ((long) TIME_OUT*1000)
 
 
 /********************* Auto move settings *************************************/
@@ -116,7 +117,7 @@ void setup() {
   bluetooth.println("# Setup done! ");
   Serial.println("# Setup done");
 
-  char* helpMsg = "# Send: \n# 'a' for auto mode (sticks in this mode until something other is received), \n# 'z' for forward, \n# 's' for backward, \n# 'q' for turning left, \n# 'd' for turning right. \n# (WASD, but on azerty)";
+  String helpMsg = "# Send: \n# 'a' for auto mode (sticks in this mode until something other is received), \n# 'z' for forward, \n# 's' for backward, \n# 'q' for turning left, \n# 'd' for turning right. \n# (WASD, but on azerty)";
   bluetooth.println(helpMsg);
   Serial.println(helpMsg);
 
@@ -132,13 +133,13 @@ void setup() {
   }
   digitalWrite(LED, LOW);
   Serial.print("# Waiting for your command, now in mode ");
-  Serial.println(START_MODE);
+  Serial.print(START_MODE);
   if (BLUETOOTH_ACCEPT_ORDERS) {
     bluetooth.print("# Waiting for your command, now in mode ");
   } else {
     bluetooth.print("# Bluetooth orders disabled. Now in mode ");
   }
-  bluetooth.println(START_MODE);
+  bluetooth.print(START_MODE);
   last_order = START_MODE;
   send_time(1, 1);
 
@@ -237,7 +238,7 @@ void send_sensor_data(int left, int front, int right) {
    Sends the time stamp since last update
 */
 void send_time(int update_serial, int update_bluetooth) {
-  int now = millis();
+  long now = millis();
   if (update_serial) {
     Serial.print("t");
     Serial.println(now - last_update_time_serial);
@@ -342,7 +343,7 @@ long last_sporadic_auto = 0;
 
 void auto_move(const int left, const int front, const int right) {
   int spd;
-  char* mode;
+  String mode;
   long now = millis();
   int send_sporadic = 0;
 

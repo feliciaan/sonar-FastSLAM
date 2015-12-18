@@ -28,7 +28,7 @@ for update in updates('../test/test6.txt'):
         ogm.getCell(pose.x, pose.y).hasRobot = pose.dir_str()
         old_pose = pose
         print(pose)
-        print(ogm)
+        print(ogm.build_str(border=True))
         i += 1
         if (i > 100):
             break

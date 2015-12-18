@@ -52,13 +52,12 @@ class OccupancyGridMap:
         col = xd
         return smallmap.getCell(row,col)
 
-    def build_str(self):
-        border  = False
+    def build_str(self, border=False):
         (ymin, ymax)    = self.yrange
         (xmin, xmax)    = self.xrange
         result  = ""
         cellsPerSmaller = self.cellsPerSmaller + (2 if border else 0)
-        emptyRepr   = ["◦" * cellsPerSmaller] * cellsPerSmaller
+        emptyRepr   = ["." * cellsPerSmaller] * cellsPerSmaller
         for y in range(ymax, ymin-1, -1):
             lines = [""] * (cellsPerSmaller)
             for x in range(xmin, xmax+1):
@@ -152,7 +151,7 @@ class Cell:
 
     def __str__(self):
         if self.hasRobot:
-            return '☢'
+            return self.hasRobot
         if self.occupation is None:
            return '░'
         chars = " ▁▂▃▄▅▆▇█"
@@ -162,7 +161,7 @@ class Cell:
 
     def origin_str(self):
         if self.hasRobot:
-            return '☠'
+            return self.hasRobot
         if self.occupation is None:
             return '◌'
         chars = "○◎◍◒◕●◙"
@@ -176,8 +175,3 @@ class Cell:
             return "Cell()"
 
         return "Cell("+repr(self.occupation)+")"
-
-
-ogm = OccupancyGridMap()
-ogm.getCell(10,10).hasRobot = True
-print(ogm)

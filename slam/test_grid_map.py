@@ -12,30 +12,26 @@ import math
 
 INF = 500
 
-hw  = Hardware('../test/nieuwedata2.txt')
-ogm = OccupancyGridMap(cellsize = 5)
-ogm.get_cell(0,0).hasRobot = '↦'
-state = State()
+hw  = Hardware('../test/nieuwedata3.txt')
+state = State(5)
 old_pose        = Pose(0,0,0)
 
-print(ogm)
 
 
 i = 0
+ogm = None
 for update in hw.updates():
-    # print("\n---------------\n")
-    # print(state.latest_motion)
-    # print(update.timedelta)
-    state.update(update)
-    pose = state.particles[0].pose
-    ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
-    cell    = ogm.get_cell(pose.x, pose.y)
-    cell.hasRobot = pose.dir_str()
-    cell.set_log_odds(-INF)
-    old_pose = pose
-    # print(pose)
-    i+=1
-    if i % 100 == 0:
-        print(ogm)
-        time.sleep(update.timedelta/1000)
-        break;
+    if isinstance (update, MotionUpdate):
+        state.update(update)
+        particle    = state.particles[0]
+        ogm = particle.map
+        pose = particle.pose
+        # ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
+
+        cell    = ogm.get_cell(pose.x, pose.y)
+        cell.hasRobot = pose.dir_str()
+        cell.set_log_odds(-INF)
+        old_pose = pose
+        i+=1
+
+print(ogm)

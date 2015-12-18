@@ -54,8 +54,12 @@ class SensorUpdate:
         self.timedelta = out_of_range(match.group(4))
 
     def __str__(self):
+        def n(i):
+            if i is None:
+                return 9999
+            return i
         return "SensorUpdate(Left: %dcm\tFront: %dcm\tRight: %dcm\tTimedelta: %dms)" \
-            % (self.left, self.front, self.right, self.timedelta)
+            % (n(self.left), n(self.front), n(self.right), n(self.timedelta))
 
 
 class MotionUpdate:

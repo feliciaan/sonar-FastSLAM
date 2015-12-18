@@ -10,7 +10,7 @@ def calc_weight(measurements, pose, map_):
     return probability # TODO remove
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
         if measured_dist is None:
-            continue
+            measured_dist = 130
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
         # TODO: what if no expected distance is known? Fixed -> weight
@@ -27,8 +27,10 @@ def _prob_of_distances(measured, expected):
 
 def update_map(measurements, pose, map_):
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
+        measurement = True
         if measured_dist is None:
-            continue
+            measured_dist = 130
+            measurement = False
 
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
@@ -36,10 +38,10 @@ def update_map(measurements, pose, map_):
         cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
         for (cell, d) in cone:
             relative_dist   = d / measured_dist
-            if relative_dist < 0.5:
-                cell.set_log_odds(-50)
-            else:
-                cell.add_log_odds(_log_odds(relative_dist-0.5))
+            if relative_dist < 0.8:
+                cell.add_log_odds(_log_odds(0.3))
+            elif measurement:
+                cell.add_log_odds(_log_odds(0.7))
 
 
 

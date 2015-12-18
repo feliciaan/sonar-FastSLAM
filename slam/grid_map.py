@@ -1,5 +1,3 @@
-SIZE = 100  # Amount of cells
-CELL_SIZE = 5  # In cm
 
 """
 This map keeps track of the occupancies.
@@ -54,13 +52,13 @@ class OccupancyGridMap:
         col = xd
         return smallmap.getCell(row,col)
 
-    def __str__(self):
+    def build_str(self):
         border  = False
         (ymin, ymax)    = self.yrange
         (xmin, xmax)    = self.xrange
         result  = ""
         cellsPerSmaller = self.cellsPerSmaller + (2 if border else 0)
-        emptyRepr   = ["." * cellsPerSmaller] * cellsPerSmaller
+        emptyRepr   = ["◦" * cellsPerSmaller] * cellsPerSmaller
         for y in range(ymax, ymin-1, -1):
             lines = [""] * (cellsPerSmaller)
             for x in range(xmin, xmax+1):
@@ -78,6 +76,8 @@ class OccupancyGridMap:
         return ("GridMap with blocksize "+str(self.blocksize)+"cm and resolution "+str(self.cellsize)+"cm:\n"+ result)
 
 
+    def __str__(self):
+        return self.build_str()
 
 
 """
@@ -85,7 +85,7 @@ Simple occupancy grid map. uses row/col (height/width) indexing, stargint in the
 Uses ints as indices
 """
 class SimpleOccupancyGridMap:
-    def __init__(self, height=SIZE, width=SIZE):
+    def __init__(self, height, width):
         self.width = width
         self.height = height
         """
@@ -129,6 +129,7 @@ class Cell:
         It's percentage indicates how sure we are about something is there.
         """
         self.occupation = occupation
+        self.hasRobot = False
 
     def set(self, occupation):
         if(occupation is None):
@@ -150,6 +151,8 @@ class Cell:
 
 
     def __str__(self):
+        if self.hasRobot:
+            return '☢'
         if self.occupation is None:
            return '░'
         chars = " ▁▂▃▄▅▆▇█"
@@ -158,6 +161,8 @@ class Cell:
         return str(self.occupation)
 
     def origin_str(self):
+        if self.hasRobot:
+            return '☠'
         if self.occupation is None:
             return '◌'
         chars = "○◎◍◒◕●◙"
@@ -174,9 +179,5 @@ class Cell:
 
 
 ogm = OccupancyGridMap()
-print(ogm)
-for i in range(-100,100,5):
-    ogm.getCell(i,i).set(1)
-    ogm.getCell(-i,i).set(1)
-
+ogm.getCell(10,10).hasRobot = True
 print(ogm)

@@ -36,7 +36,7 @@ for update in hw.updates():
         cells = ogm.cells_between(pose.x, pose.y, 50, pose.theta, math.pi * 180 / 180)
         cells = list(cells)
         for (cell, d) in cells:
-            if 40 < d < 60:
+            if 44 < d < 50:
                 cell.set(1)
             else:
                 cell.set(0.2)

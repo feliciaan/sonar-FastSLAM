@@ -1,6 +1,7 @@
 import re
 
 from serial import Serial
+from serial.serialutil import SerialException
 
 from settings import DEBUG, SERIAL_PORT
 
@@ -8,21 +9,21 @@ from settings import DEBUG, SERIAL_PORT
 class Hardware:
     def __init__(self):
         self.serial = None
+        print("DEBUG MODE: %d" % DEBUG)
         if DEBUG:
-            self.file = 'nieuwedata1.txt'
+            self.file = '../test/nieuwedata1.txt'
         else:
-            self.serial = Serial(SERIAL_PORT, 9600, timeout=30)
+            try:
+                self.serial = Serial(SERIAL_PORT, 9600, timeout=1)
+            except SerialException:
+                print("Serial connection could not be opened!")
 
     def updates(self):
         data_iterator = open(self.file) if DEBUG else self.serial_data()
         for line in data_iterator:
-            yield parse(line.strip())
-
-    def serial_data(self):
-        while True:
-            message = self.readline()
-            if message:
-                yield message
+            line = line.strip()
+            if line:
+                yield parse(line)
 
     def write(self, action):
         if self.serial:
@@ -44,6 +45,10 @@ class SensorUpdate:
         self.right = int(match.group(3))
         self.timedelta = int(match.group(4))
 
+    def __str__(self):
+        return "SensorUpdate(Left: %d\tFront: %d\tRight: %d\tTimedelta: %d)" \
+            % (self.left, self.front, self.right, self.timedelta)
+
 
 class MotionUpdate:
     def __init__(self, line):
@@ -53,11 +58,16 @@ class MotionUpdate:
         self.correction = int(match.group(3))
         self.timedelta = int(match.group(4))
 
+    def __str__(self):
+        return "MotionUpdate(Left: %d\tRight: %d\tTimedelta: %d)" \
+            % (self.left, self.right, self.timedelta)
 
-def parse(self, line):
+def parse(line):
     if line.startswith('#'):
         return None
     elif line.startswith('L'):
         return SensorUpdate(line)
-    else:
+    elif line.startswith('el'):
         return MotionUpdate(line)
+    else:
+        return None

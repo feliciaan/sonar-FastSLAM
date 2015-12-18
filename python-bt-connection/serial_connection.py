@@ -36,8 +36,10 @@ class InputThread(Thread):
         while(not self.stopped):
             message = ser.readline()
             if message:
-                yield message
+                print(message)
 
 
 inputThread = InputThread()
 inputThread.start()
+
+inputThread.join()

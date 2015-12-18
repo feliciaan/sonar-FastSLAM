@@ -24,19 +24,24 @@ class OccupancyGridMap:
         self.xrange = (0,0)
         self.yrange = (0,0)
         init_kwadrants  = [(0,0)]
-        for kwadrant in init_kwadrants:
-            self.smallmaps[kwadrant] = SimpleOccupancyGridMap(self.cellsPerSmaller, self.cellsPerSmaller)
+        for (x,y) in init_kwadrants:
+            self._init_map(x, y)
+
+
+    def _init_map(self, x, y):
+        sogm    = SimpleOccupancyGridMap(self.cellsPerSmaller, self.cellsPerSmaller)
+        self.smallmaps[(x,y)] = sogm
 
     """
     Gets the cell at x, y
     Might initialize new blocks if needed, so don't ask things unless needed
     """
-    def getCell(self, x, y):
+    def get_cell(self, x, y):
         # get smaller map
         xi = int( x // self.blocksize)
         yi = int( y // self.blocksize)
         if (xi, yi) not in self.smallmaps:
-            self.smallmaps[(xi,yi)] = SimpleOccupancyGridMap(self.cellsPerSmaller, self.cellsPerSmaller)
+            self._init_map(xi,yi)
             (xmin, xmax)    = self.xrange
             self.xrange     = (min(xmin, xi), max(xmax, xi) )
             (ymin, ymax)    = self.yrange
@@ -51,7 +56,7 @@ class OccupancyGridMap:
         yd  = int(math.floor( yd / self.cellsize))
         row = yd
         col = xd
-        return smallmap.getCell(row,col)
+        return smallmap.get_cell(row,col)
 
 
     """
@@ -64,22 +69,27 @@ class OccupancyGridMap:
     | /
     +---------
     Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
-
+    Return (cell, distance to x,y)
     """
-    def cellsbetween(self, x, y, view_distance, theta, view_angle):
-        assert view_angle <= (math.pi/2), "The angle should be less then 90° or  (pi/2) radians"
+    def cells_between(self, x, y, view_distance, theta, view_angle):
+        assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave "+str(view_angle)
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
+
+
         for xi in range(xmin, xmax, int(self.cellsize//2)):
             for yi in range(ymin, ymax, int(self.cellsize//2)):
-                if distance(x,y,xi,yi) > view_distance:
+                d = distance(x,y,xi,yi)
+                if d > view_distance:
                     continue
-                if abs(angle(xi,yi,x,y) - theta) > view_angle:
+                anglei  = angle(xi,yi,x,y) - theta  # [-theta, 2*pi - theta]
+                # view_angle    : [0, pi]
+                if not ((-view_angle <= anglei <= view_angle) or (-view_angle <= anglei - 2*math.pi <= view_angle )):
                     continue
-                yield self.getCell(xi, yi)
-
+                cell    = self.get_cell(xi, yi)
+                yield (cell, d)
 
 
 
@@ -88,7 +98,7 @@ class OccupancyGridMap:
         (xmin, xmax)    = self.xrange
         result  = ""
         cellsPerSmaller = self.cellsPerSmaller + (2 if border else 0)
-        emptyRepr   = ["." * cellsPerSmaller] * cellsPerSmaller
+        emptyRepr   = ["░" * cellsPerSmaller] * cellsPerSmaller
         for y in range(ymax, ymin-1, -1):
             lines = [""] * (cellsPerSmaller)
             for x in range(xmin, xmax+1):
@@ -96,7 +106,7 @@ class OccupancyGridMap:
                 if (x,y) in self.smallmaps:
                     reprs = self.smallmaps[(x,y)].build_str(reverse=True, border = border, borderMsg = str((x,y)))
                     if (x,y) == (0,0):
-                        orig_repr   = self.getCell(0,0).origin_str();
+                        orig_repr   = self.get_cell(0,0).origin_str();
                         reprs[-1] = orig_repr + reprs[-1][1:]
 
                 for i in range(0, cellsPerSmaller):
@@ -112,10 +122,13 @@ class OccupancyGridMap:
 def distance(x0,y0,x1,y1):
     return math.sqrt( (x0 - x1)**2 + (y0 - y1)**2 )
 
+"""
+Returns the angle between the two coordinates, expressed in [0,2*pi]
+"""
 def angle(x0,y0,x1,y1):
     dx = x0 - x1
     dy = y0 - y1
-    return math.atan2(dy, dx)
+    return (2*math.pi + math.atan2(dy, dx)) % (2*math.pi)
 
 
 """
@@ -130,6 +143,10 @@ class SimpleOccupancyGridMap:
         Grid[ROW][HEIGHT]
         """
         self.grid = [[Cell() for _ in range(width)] for _ in range(height)]
+        for rowi in range(0,height):
+            for coli in range(0,width):
+                self.grid[rowi][coli] = Cell()
+
 
     def __iter__(self):
         return iter(self.grid)
@@ -156,7 +173,7 @@ class SimpleOccupancyGridMap:
     def __str__(self):
         return "\n"+"\n".join(self.build_str(self, border = True))
 
-    def getCell(self, row, col):
+    def get_cell(self, row, col):
         return self.grid[row][col]
 
 
@@ -176,7 +193,7 @@ class Cell:
         if(isinstance(occupation, bool)):
             occupation = 1 if occupation else 0
 
-        assert (0 <= occupation <= 1), "Invalid occupation range, expected value between 0 and 100"
+        assert (0 <= occupation <= 1), "Invalid occupation range, expected value between 0 and 100, got "+str(occupation)
         self.occupation = occupation
 
 
@@ -196,7 +213,7 @@ class Cell:
         chars = " ▁▂▃▄▅▆▇█"
         i = int(self.occupation * (len(chars)-1))
         return chars[i]
-        return str(self.occupation)
+
 
     def origin_str(self):
         if self.hasRobot:

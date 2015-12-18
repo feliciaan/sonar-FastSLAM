@@ -11,7 +11,7 @@ import math
 
 hw  = Hardware('../test/nieuwedata2.txt')
 ogm = OccupancyGridMap(cellsize = 5)
-ogm.getCell(0,0).hasRobot = '↦'
+ogm.get_cell(0,0).hasRobot = '↦'
 state = State()
 old_pose        = Pose(0,0,0)
 
@@ -26,19 +26,24 @@ for update in hw.updates():
         # print(update.timedelta)
         state.update(update)
         pose = state.particles[0].pose
-        ogm.getCell(old_pose.x, old_pose.y).hasRobot = None
-        cell    = ogm.getCell(pose.x, pose.y)
+        ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
+        cell    = ogm.get_cell(pose.x, pose.y)
         cell.hasRobot = pose.dir_str()
         cell.set(0)
         old_pose = pose
         # print(pose)
 
-        cells = ogm.cellsbetween(pose.x, pose.y, 150, pose.theta, math.pi * 25 / 180)
+        cells = ogm.cells_between(pose.x, pose.y, 50, pose.theta, math.pi * 180 / 180)
         cells = list(cells)
-        for cell in cells:
-            cell.set(1)
+        for (cell, d) in cells:
+            if 40 < d < 60:
+                cell.set(1)
+            else:
+                cell.set(0.2)
+
+
         print(ogm)
-        for cell in cells:
+        for (cell, d) in cells:
             cell.set(0)
         i += 1
 

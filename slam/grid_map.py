@@ -1,4 +1,5 @@
 import math
+from cell import Cell
 """
 This map keeps track of the occupancies.
 To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap', which it instantiates as needed.
@@ -58,7 +59,13 @@ class OccupancyGridMap:
         col = xd
         return smallmap.get_cell(row,col)
 
+    def distance_to_closest_object_in_cone(self, pose, cone_width_angle):
+        # TODO: plz implement me
+        pass
 
+
+    def get_cone(self, pose, cone_angle, radius):
+        return self._cells_in_cone(pose.x, pose.y, radius, pose.theta, cone_angle/2)
     """
     Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
     Angle in radians; this value is the view to the left.
@@ -71,7 +78,7 @@ class OccupancyGridMap:
     Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
     Return (cell, distance to x,y)
     """
-    def cells_between(self, x, y, view_distance, theta, view_angle):
+    def _cells_in_cone(self, x, y, view_distance, theta, view_angle):
         assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave "+str(view_angle)
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)
@@ -151,6 +158,7 @@ class SimpleOccupancyGridMap:
     def __iter__(self):
         return iter(self.grid)
 
+
     def __repr__(self):
         return str(self)
 
@@ -175,59 +183,3 @@ class SimpleOccupancyGridMap:
 
     def get_cell(self, row, col):
         return self.grid[row][col]
-
-
-class Cell:
-    def __init__(self, occupation=None):
-        """self.occupied is a value between 0 (free) and 100 (occupied) if it's occupancy is known, else
-        None.
-        It's percentage indicates how sure we are about something is there.
-        """
-        self.occupation = occupation
-        self.hasRobot = False
-
-    def set(self, occupation):
-        if(occupation is None):
-            self.occupation = None
-            return
-        if(isinstance(occupation, bool)):
-            occupation = 1 if occupation else 0
-
-        assert (0 <= occupation <= 1), "Invalid occupation range, expected value between 0 and 100, got "+str(occupation)
-        self.occupation = occupation
-
-
-
-    def get(self):
-        return self.occupation
-
-    def occupied():
-        return self.occupation >= 0.5
-
-
-    def __str__(self):
-        if self.hasRobot:
-            return self.hasRobot
-        if self.occupation is None:
-           return '░'
-        chars = " ▁▂▃▄▅▆▇█"
-        i = int(self.occupation * (len(chars)-1))
-        return chars[i]
-
-
-    def origin_str(self):
-        if self.hasRobot:
-            return self.hasRobot
-        if self.occupation is None:
-            return '◌'
-        chars = "○◎◍◒◕●◙"
-        i = int(self.occupation * (len(chars)-1))
-        return chars[i]
-        return str(self.occupation)
-
-
-    def __repr__(self):
-        if (self.occupation is None):
-            return "Cell()"
-
-        return "Cell("+repr(self.occupation)+")"

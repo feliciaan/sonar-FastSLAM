@@ -63,9 +63,9 @@ class OccupancyGridMap:
         # TODO: plz implement me
         pass
 
+
     def get_cone(self, pose, cone_angle, radius):
-        # TODO: plz implement me
-        pass
+        return self._cells_in_cone(pose.x, pose.y, radius, pose.theta, cone_angle/2)
     """
     Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
     Angle in radians; this value is the view to the left.
@@ -78,7 +78,7 @@ class OccupancyGridMap:
     Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
     Return (cell, distance to x,y)
     """
-    def cells_between(self, x, y, view_distance, theta, view_angle):
+    def _cells_in_cone(self, x, y, view_distance, theta, view_angle):
         assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave "+str(view_angle)
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)

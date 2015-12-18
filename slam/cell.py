@@ -15,6 +15,9 @@ class Cell:
         self.occupied = 0
         self.hasRobot = False
 
+    def add_log_odds(self, delta):
+        self.set_log_odds(self.occupied + delta)
+
     def set_log_odds(self, occupied):
         self.occupied = occupied
         if (-500 < occupied < 500):

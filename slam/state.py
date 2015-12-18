@@ -1,7 +1,7 @@
 from hardware import MotionUpdate, SensorUpdate
 from grid_map import OccupancyGridMap
 import motion_model
-# import sensor_model
+import sensor_model
 from pose import Pose
 
 
@@ -47,7 +47,5 @@ class Particle:
         self.pose = motion_model.calculate_pose(self.pose, motion, timedelta)
 
     def update_sensor(self, update):
-        # self.weight = sensor_model.calc_weight(update, self.pose, self.map)
-        # sensor_model.update_map(update, self.pose, self.map)
-        # TODO re-enab
-        pass
+        self.weight = sensor_model.calc_weight(update, self.pose, self.map)
+        sensor_model.update_map(update, self.pose, self.map)

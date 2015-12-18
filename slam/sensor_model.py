@@ -1,5 +1,5 @@
 import math
-from state import Pose
+from pose import Pose
 
 CONE_ANGLE = 0.872664626  # In radians
 PROBABILITY_FREE = 0.0001
@@ -7,7 +7,7 @@ PROBABILITY_FREE = 0.0001
 
 def calc_weight(measurements, pose, map_):
     probability = 1
-
+    return probability # TODO remove
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
         if measured_dist is None:
             continue
@@ -34,12 +34,13 @@ def update_map(measurements, pose, map_):
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
         cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
+        for (cell, d) in cone:
+            relative_dist   = d / measured_dist
+            if relative_dist < 0.5:
+                cell.set_log_odds(-50)
+            else:
+                cell.add_log_odds(_log_odds(relative_dist-0.5))
 
-        for cell in cone.edge:
-            cell.occupied += _log_odds(.5 + (.5 / len(cone.edge)))
-
-        for cell in cone.inside:
-            cell.occupied += _log_odds(PROBABILITY_FREE)
 
 
 def _measurement_per_angle(measurements):

@@ -41,10 +41,17 @@ class SensorUpdate:
             line = "L0F0R0t0"
         match = re.match('L(\d+)F(\d+)R(\d+)t(\d+)', line)
         assert match is not None, "Invalid input for sensor update: "+line
-        self.left = int(match.group(1))
-        self.front = int(match.group(2))
-        self.right = int(match.group(3))
-        self.timedelta = int(match.group(4))
+
+        def out_of_range(s):
+            i = int(s)
+            if i == 9999:
+                return None
+            return i
+
+        self.left = out_of_range(match.group(1))
+        self.front = out_of_range(match.group(2))
+        self.right = out_of_range(match.group(3))
+        self.timedelta = out_of_range(match.group(4))
 
     def __str__(self):
         return "SensorUpdate(Left: %dcm\tFront: %dcm\tRight: %dcm\tTimedelta: %dms)" \

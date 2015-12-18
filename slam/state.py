@@ -1,7 +1,9 @@
-from hardware import MotionUpdate, SensorUpdate
-from grid_map import OccupancyGridMap
+import random
+
 import motion_model
 import sensor_model
+from grid_map import OccupancyGridMap
+from hardware import MotionUpdate, SensorUpdate
 from pose import Pose
 
 
@@ -12,7 +14,8 @@ class State:
         self.initialize_particles()
 
     def initialize_particles(self):
-        self.particles = [Particle(self.n_particles) for _ in range(self.n_particles)]
+        self.particles = [Particle(self.n_particles)
+                          for _ in range(self.n_particles)]
 
     def update(self, update):
         if isinstance(update, MotionUpdate):
@@ -34,8 +37,29 @@ class State:
         self.resample()
 
     def resample(self):
-        # TODO
-        pass
+        """Implements algorithm Low_variance_sampler (Thrun, p. 110)"""
+
+        self._normalize_particle_weights()
+
+        new_particles = []
+
+        r = random.random() / self.n_particles
+        c = self.particles[0].weight
+        i = 0
+        for m in range(self.n_particles):
+            u = r + m / self.n_particles
+            while u > c:
+                i += 1
+                c += self.particles[i].weight
+            new_particles.append(self.particles[i])
+
+        self.particles = new_particles
+
+    def _normalize_particle_weights(self):
+        total_weight = sum(particle.weight for particle in self.particles)
+        for particle in self.particles:
+            particle.weight /= total_weight
+
 
 class Particle:
     def __init__(self, n_particles):

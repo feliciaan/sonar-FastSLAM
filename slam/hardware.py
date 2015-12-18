@@ -37,6 +37,8 @@ class Hardware:
 
 class SensorUpdate:
     def __init__(self, line = None):
+        if line is None:
+            line = "L0F0R0t0"
         match = re.match('L(\d+)F(\d+)R(\d+)t(\d+)', line)
         assert match is not None, "Invalid input for sensor update: "+line
         self.left = int(match.group(1))

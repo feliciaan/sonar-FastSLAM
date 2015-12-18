@@ -11,9 +11,29 @@ class OccupancyGridMap:
     def __iter__(self):
         return iter(self.grid)
 
+    def distance_to_closest_object_in_cone(self, pose, cone_width_angle):
+        # TODO: plz implement me
+        pass
+
+    def get_cone(self, pose, cone_angle, radius):
+        # TODO: plz implement me
+        pass
+
+
+class Cone:
+    def __init__(self, edge, inside):
+        # Iterable of cells on edge of the cone
+        self.edge = edge
+        # Iterable of cells inside the cone
+        self.inside = inside
+
 
 class Cell:
     def __init__(self):
-        """self.occupied is True or False if it's occupancy is known, else
-        None."""
-        self.occupied = None
+        """
+        self.occupied is a log-odds value (from -inf to inf), where
+           0 means unknown,
+           -inf means certainly free,
+           and inf means certainly occupied.
+        """
+        self.occupied = 0

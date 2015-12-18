@@ -55,10 +55,32 @@ class OccupancyGridMap:
 
 
     """
-    Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right
+    Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
+    Angle in radians; this value is the view to the left.
+
+    |       /
+    |     /
+    |   /
+    | /
+    +---------
+    Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
+
     """
-    def cellsbetween(self, x, y, theta, angle):
-        pass
+    def cellsbetween(self, x, y, view_distance, theta, view_angle):
+        assert view_angle <= (math.pi/2), "The angle should be less then 90° or  (pi/2) radians"
+        xmin = int(x - view_distance - self.cellsize)
+        xmax = int(x + view_distance + self.cellsize)
+        ymin = int(y - view_distance - self.cellsize)
+        ymax = int(y + view_distance + self.cellsize)
+        for xi in range(xmin, xmax, int(self.cellsize//2)):
+            for yi in range(ymin, ymax, int(self.cellsize//2)):
+                if distance(x,y,xi,yi) > view_distance:
+                    continue
+                if abs(angle(xi,yi,x,y) - theta) > view_angle:
+                    continue
+                yield self.getCell(xi, yi)
+
+
 
 
     def build_str(self, border=False):
@@ -86,6 +108,14 @@ class OccupancyGridMap:
 
     def __str__(self):
         return self.build_str()
+
+def distance(x0,y0,x1,y1):
+    return math.sqrt( (x0 - x1)**2 + (y0 - y1)**2 )
+
+def angle(x0,y0,x1,y1):
+    dx = x0 - x1
+    dy = y0 - y1
+    return math.atan2(dy, dx)
 
 
 """

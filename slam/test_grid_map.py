@@ -17,6 +17,7 @@ old_pose        = Pose(0,0,0)
 
 print(ogm)
 
+
 i = 0
 for update in hw.updates():
     if isinstance(update, MotionUpdate):
@@ -25,12 +26,20 @@ for update in hw.updates():
         # print(update.timedelta)
         state.update(update)
         pose = state.particles[0].pose
-        # ogm.getCell(old_pose.x, old_pose.y).hasRobot = None
+        ogm.getCell(old_pose.x, old_pose.y).hasRobot = None
         cell    = ogm.getCell(pose.x, pose.y)
         cell.hasRobot = pose.dir_str()
         cell.set(0)
         old_pose = pose
         # print(pose)
+
+        cells = ogm.cellsbetween(pose.x, pose.y, 150, pose.theta, math.pi * 25 / 180)
+        cells = list(cells)
+        for cell in cells:
+            cell.set(1)
         print(ogm)
+        for cell in cells:
+            cell.set(0)
         i += 1
-        time.sleep(update.timedelta/1000)
+
+        time.sleep(update.timedelta/100)

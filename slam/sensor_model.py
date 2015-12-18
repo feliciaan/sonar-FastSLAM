@@ -3,6 +3,7 @@ from pose import Pose
 
 CONE_ANGLE = 0.872664626  # In radians
 PROBABILITY_FREE = 0.0001
+RECOGNITION_SENSITIVITY = 5
 
 
 def calc_weight(measurements, pose, map_):
@@ -22,7 +23,14 @@ def calc_weight(measurements, pose, map_):
 
 
 def _prob_of_distances(measured, expected):
-    return 1 / abs(measured - expected)
+    return _normal_distribution(measured, expected, RECOGNITION_SENSITIVITY)
+
+
+def _normal_distribution(x, mean, stddev):
+    denominator = (math.sqrt(2 * math.pi) *
+                   stddev *
+                   math.exp(((x - mean) ** 2) / (2 * (stddev ** 2))))
+    return 1 / denominator
 
 
 def update_map(measurements, pose, map_):
@@ -40,7 +48,6 @@ def update_map(measurements, pose, map_):
                 cell.set_log_odds(-50)
             else:
                 cell.add_log_odds(_log_odds(relative_dist-0.5))
-
 
 
 def _measurement_per_angle(measurements):

@@ -1,40 +1,38 @@
 import re
 
-from serial import Serial
-from serial.serialutil import SerialException
+# from serial import Serial
+# from serial.serialutil import SerialException
 
-from settings import DEBUG, SERIAL_PORT, TEST_FILE_LOCATION
 
 
 class Hardware:
-    def __init__(self):
+    def __init__(self, testfile=None, serial_port=None):
         self.serial = None
-        print("DEBUG MODE: %d" % DEBUG)
-        if DEBUG:
-            self.file = TEST_FILE_LOCATION
-        else:
-            try:
-                self.serial = Serial(SERIAL_PORT, 9600, timeout=1)
-            except SerialException:
-                print("Serial connection could not be opened!")
+        assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
+        self.file = testfile
+        if serial_port is not None:
+            #try:
+            #   self.serial = Serial(serial_port, 9600, timeout=1)
+            #except SerialException:
+            print("Serial connection could not be opened! Please, check the code to see why :p")
 
     def updates(self):
-        data_iterator = open(self.file) if DEBUG else self.serial_data()
+        data_iterator = open(self.file) # if DEBUG else self.serial_data()
         for line in data_iterator:
             line = line.strip()
             if line:
                 yield parse(line)
 
-    def write(self, action):
-        if self.serial:
-            self.serial.write(bytes(var, 'utf-8'))
+    #def write(self, action):
+    #    if self.serial:
+    #        self.serial.write(bytes(var, 'utf-8'))
 
-    def serial_data(self):
-        while True:
-            message = self.serial.readline().decode('utf-8').strip()
-            message = message if message != '' else None
-            if message:
-                yield message
+    #def serial_data(self):
+    #    while True:
+    #        message = self.serial.readline().decode('utf-8').strip()
+    #        message = message if message != '' else None
+    #        if message:
+    #            yield message
 
 
 class SensorUpdate:

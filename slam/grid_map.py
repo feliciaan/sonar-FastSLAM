@@ -1,4 +1,4 @@
-
+import math
 """
 This map keeps track of the occupancies.
 To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap', which it instantiates as needed.
@@ -16,6 +16,7 @@ class OccupancyGridMap:
         assert blocksize > 1, "invalid blocksize, >1 expected"
         assert cellsize > 0, "invalid cellsize, >1 expected"
         assert blocksize > cellsize, "blocksize should be > cellsize"
+        assert blocksize % cellsize == 0, "blocksize should be a multiple of cellsize"
         self.blocksize = blocksize
         self.cellsize = cellsize
         self.cellsPerSmaller = int(blocksize / cellsize)
@@ -46,11 +47,19 @@ class OccupancyGridMap:
         # get the coordinates in the smaller map
         xd  = x % self.blocksize
         yd  = y % self.blocksize
-        xd  = int( xd // self.cellsize)
-        yd  = int( yd // self.cellsize)
+        xd  = int(math.floor( xd / self.cellsize))
+        yd  = int(math.floor( yd / self.cellsize))
         row = yd
         col = xd
         return smallmap.getCell(row,col)
+
+
+    """
+    Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right
+    """
+    def cellsbetween(self, x, y, theta, angle):
+        pass
+
 
     def build_str(self, border=False):
         (ymin, ymax)    = self.yrange

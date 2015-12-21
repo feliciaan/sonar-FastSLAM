@@ -9,24 +9,29 @@ try:
 except ImportError:
         print("Importing serial failed! Only file imports will be supported")
         SERIAL_AVAILABLE = False
+import sys
+
+import readchar
+
+CONVERT_CHARS = {'\x1b\x5b\x41':'z', '\x1b\x5b\x42':'s', '\x1b\x5b\x44':'q','\x1b\x5b\x43':'d'}
 
 class Hardware:
-    def __init__(self, testfile=None, serial_port=None):
+    def __init__(self, testfile=None, serial_port=None, output_file=None):
         self.serial = None
         self.t = None
         self.read_input = True
         assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
+        self.output_file = output_file
         if SERIAL_AVAILABLE and serial_port is not None:
+        if serial_port is not None:
             try:
                 self.serial = Serial(serial_port, 9600, timeout=1)
+                 # Different thread for manual control
+                self.t = threading.Thread(target=self.send_messages)
+                self.t.start()
             except SerialException:
                 print("Serial connection could not be opened! Please, check the code to see why :p")
-
-        self.t = threading.Thread(target=self.send_messages)
-        self.t.start()
-
-
 
     def updates(self):
         data_iterator = self.serial_data() if SERIAL_AVAILABLE and self.serial else open(self.file)
@@ -34,25 +39,44 @@ class Hardware:
             line = line.strip()
             if line:
                 yield parse(line)
-            time.sleep(1)
         if self.t:
             self.read_input = False
 
     def write(self, action):
         if self.serial:
             self.serial.write(bytes(action, 'utf-8'))
+        print("Sending to robot:", action)
 
     def serial_data(self):
-        while True:
-            message = self.serial.readline().decode('utf-8').strip()
-            message = message if message != '' else None
-            if message:
-                yield message
+        output = self.output_file if self.output_file else '/dev/null'
+        print(output)
+        with open(output, mode='a', newline='\n') as f:
+            while True:
+                message = self.serial.readline().decode('utf-8').strip()
+                f.write(message)
+                print(message)
+                message = message if message != '' else None
+                if message:
+                    yield message
 
     def send_messages(self):
+        print("Reading input:")
         while self.read_input:
-            i = input()
-            print(i)
+            key = readchar.readkey()
+            if key in ['\x03', '\x04']: # if control-c stop
+                print("Retuning control to the program")
+                self.read_input = False
+                break
+
+            if len(key) == 1:
+                self.write(key)
+            else:
+                # convert to other thing if necessary
+                new_c = CONVERT_CHARS.get(key)
+                if new_c:
+                    self.write(new_c)
+
+
 
 class SensorUpdate:
     def __init__(self, line = None):

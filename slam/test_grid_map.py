@@ -13,7 +13,7 @@ import math
 INF = 500
 
 hw  = Hardware('../test/controlled_run.txt')
-state = State(5)
+state = State(cellsize=5)
 old_pose        = Pose(0,0,0)
 
 

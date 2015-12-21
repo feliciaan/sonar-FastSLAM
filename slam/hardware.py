@@ -1,39 +1,55 @@
 import re
 
-# from serial import Serial
-# from serial.serialutil import SerialException
+import threading
+import time
+from serial import Serial
+from serial.serialutil import SerialException
 
 
 
 class Hardware:
     def __init__(self, testfile=None, serial_port=None):
         self.serial = None
+        self.t = None
+        self.read_input = True
         assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
         if serial_port is not None:
-            #try:
-            #   self.serial = Serial(serial_port, 9600, timeout=1)
-            #except SerialException:
-            print("Serial connection could not be opened! Please, check the code to see why :p")
+            try:
+                self.serial = Serial(serial_port, 9600, timeout=1)
+            except SerialException:
+                print("Serial connection could not be opened! Please, check the code to see why :p")
+
+        self.t = threading.Thread(target=self.send_messages)
+        self.t.start()
+
+
 
     def updates(self):
-        data_iterator = open(self.file) # if DEBUG else self.serial_data()
+        data_iterator = self.serial_data() if self.serial else open(self.file)
         for line in data_iterator:
             line = line.strip()
             if line:
                 yield parse(line)
+            time.sleep(1)
+        if self.t:
+            self.read_input = False
 
-    #def write(self, action):
-    #    if self.serial:
-    #        self.serial.write(bytes(var, 'utf-8'))
+    def write(self, action):
+        if self.serial:
+            self.serial.write(bytes(action, 'utf-8'))
 
-    #def serial_data(self):
-    #    while True:
-    #        message = self.serial.readline().decode('utf-8').strip()
-    #        message = message if message != '' else None
-    #        if message:
-    #            yield message
+    def serial_data(self):
+        while True:
+            message = self.serial.readline().decode('utf-8').strip()
+            message = message if message != '' else None
+            if message:
+                yield message
 
+    def send_messages(self):
+        while self.read_input:
+            i = input()
+            print(i)
 
 class SensorUpdate:
     def __init__(self, line = None):

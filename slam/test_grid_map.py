@@ -13,7 +13,7 @@ import math
 INF = 500
 
 hw  = Hardware('../test/controlled_run.txt')
-state = State(cellsize=5)
+state = State(cellsize=5, blocksize=100)
 old_pose        = Pose(0,0,0)
 
 
@@ -21,8 +21,7 @@ old_pose        = Pose(0,0,0)
 i = 0
 ogm = None
 for update in hw.updates():
-    print("Processing "+str(update))
-    if isinstance (update, MotionUpdate):
+        print(update)
         state.update(update)
         particle    = state.particles[0]
         ogm = particle.map
@@ -33,6 +32,7 @@ for update in hw.updates():
         cell.hasRobot = pose.dir_str()
         cell.set_log_odds(-INF)
         old_pose = pose
-        i+=1
+        print(ogm)
+
 
 print(ogm)

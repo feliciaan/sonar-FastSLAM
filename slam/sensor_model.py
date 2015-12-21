@@ -12,6 +12,8 @@ def calc_weight(measurements, pose, map_):
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
         if measured_dist is None:
             measured_dist = 130
+        if measured_dist > 200:
+            measured_dist = 200
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
         # TODO: what if no expected distance is known? Fixed -> weight
@@ -36,7 +38,7 @@ def _normal_distribution(x, mean, stddev):
 def update_map(measurements, pose, map_):
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
         measurement = True
-        if measured_dist is None:
+        if measured_dist is None or measured_dist > 130:
             measured_dist = 130
             measurement = False
 

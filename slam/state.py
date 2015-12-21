@@ -8,10 +8,10 @@ from pose import Pose
 
 
 class State:
-    def __init__(self, n_particles=1, cellsize=5):
+    def __init__(self, n_particles=1, cellsize=5, blocksize=100):
         self.latest_motion = MotionUpdate()
         self.n_particles = n_particles
-        self.particles = [Particle(self.n_particles, cellsize) for _ in range(self.n_particles)]
+        self.particles = [Particle(self.n_particles, cellsize, blocksize) for _ in range(self.n_particles)]
 
     def update(self, update):
         if isinstance(update, MotionUpdate):
@@ -58,8 +58,8 @@ class State:
 
 
 class Particle:
-    def __init__(self, n_particles, cellsize):
-        self.map = OccupancyGridMap(blocksize=cellsize*100, cellsize = cellsize)
+    def __init__(self, n_particles, cellsize, blocksize):
+        self.map = OccupancyGridMap(blocksize = blocksize, cellsize = cellsize)
         self.pose = Pose(0, 0, 0)
         self.weight = 1.0 / n_particles
 

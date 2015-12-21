@@ -52,6 +52,9 @@
 // when the algorithm chooses a turning direction, it will keep this turning direction for 5secs, to prevent loops in cornersr
 #define DIR_CHANGE_TIME 2500
 
+/********************* Angle settings *****************************************/
+#define ANGLE_10DEG 44
+#define ANGLE_45DEG 200
 
 /********************* Enable/disable output/input sending ********************/
 // send each ... ms a sporadic sensor update
@@ -399,14 +402,14 @@ void check_env(const int left, const int front, const int right) {
 if (front < 15 || left < 5 || right < 5) {
     halt();
   }
-  else if (front == OUT_OF_RANGE && left == OUT_OF_RANGE && right == OUT_OF_RANGE) {
+  else if (front == OUT_OF_RANGE || (left == OUT_OF_RANGE && right == OUT_OF_RANGE)) {
     halt();
   }
 }
 
-void timed_turn(const int dir) {
+void timed_turn(const int dir, const int time_ms) {
   turn(dir);
-  delay(200);
+  delay(time_ms);
   halt();
 }
 /***************************************************************************************/
@@ -436,8 +439,10 @@ void loop() {
     case 'a': auto_move(left, front, right);  break;
     case 'z': forward();                      break;
     case 's': backward();                     break;
-    case 'd': timed_turn(LEFT);               break;
-    case 'q': timed_turn(RIGHT);              break;
+    case 'd': timed_turn(LEFT, ANGLE_10DEG);  break;
+    case 'D': timed_turn(LEFT, ANGLE_45DEG);  break;
+    case 'q': timed_turn(RIGHT, ANGLE_10DEG); break;
+    case 'Q': timed_turn(RIGHT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
     case 'S':

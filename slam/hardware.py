@@ -2,10 +2,13 @@ import re
 
 import threading
 import time
-from serial import Serial
-from serial.serialutil import SerialException
-
-
+SERIAL_AVAILABLE = True
+try:
+        from serial import Serial
+        from serial.serialutil import SerialException
+except ImportError:
+        print("Importing serial failed! Only file imports will be supported")
+        SERIAL_AVAILABLE = False
 
 class Hardware:
     def __init__(self, testfile=None, serial_port=None):
@@ -14,7 +17,7 @@ class Hardware:
         self.read_input = True
         assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
-        if serial_port is not None:
+        if SERIAL_AVAILABLE and serial_port is not None:
             try:
                 self.serial = Serial(serial_port, 9600, timeout=1)
             except SerialException:
@@ -26,7 +29,7 @@ class Hardware:
 
 
     def updates(self):
-        data_iterator = self.serial_data() if self.serial else open(self.file)
+        data_iterator = self.serial_data() if SERIAL_AVAILABLE and self.serial else open(self.file)
         for line in data_iterator:
             line = line.strip()
             if line:

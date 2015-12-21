@@ -12,7 +12,7 @@ import math
 
 INF = 500
 
-hw  = Hardware('../test/nieuwedata3.txt')
+hw  = Hardware('../test/controlled_run.txt')
 state = State(5)
 old_pose        = Pose(0,0,0)
 
@@ -21,6 +21,7 @@ old_pose        = Pose(0,0,0)
 i = 0
 ogm = None
 for update in hw.updates():
+    print("Processing "+str(update))
     if isinstance (update, MotionUpdate):
         state.update(update)
         particle    = state.particles[0]

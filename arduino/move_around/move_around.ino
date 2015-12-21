@@ -72,7 +72,7 @@
 // disable if someone sends annoying commands while debugging over cable
 #define BLUETOOTH_ACCEPT_ORDERS 1
 
-#define START_MODE 't'
+#define START_MODE 'H'
 
 /********************* Variables ***************************/
 
@@ -449,7 +449,7 @@ void loop() {
     case 'x':
     case 'S':
     case ' ': halt();                         break;
-    default :                                 break;
+    default : halt();                         break;
   }
 
 }

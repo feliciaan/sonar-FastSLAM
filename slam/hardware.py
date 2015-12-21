@@ -3,15 +3,22 @@ import re
 import threading
 import time
 SERIAL_AVAILABLE = True
+READCHAR_AVAILABLE = True
+
 try:
         from serial import Serial
         from serial.serialutil import SerialException
 except ImportError:
         print("Importing serial failed! Only file imports will be supported")
         SERIAL_AVAILABLE = False
+try:
+        import readchar
+except ImportError:
+        print("Readchar not available")
+        READCHAR_AVAILABLE = False
+
 import sys
 
-import readchar
 
 CONVERT_CHARS = {'\x1b\x5b\x41':'z', '\x1b\x5b\x42':'s', '\x1b\x5b\x44':'q','\x1b\x5b\x43':'d'}
 
@@ -59,6 +66,9 @@ class Hardware:
                     yield message
 
     def send_messages(self):
+        if not READCHAR_AVAILABLE:
+                print("Readchar is not available on this machine. pip install readchar")
+                return
         print("Reading input:")
         while self.read_input:
             key = readchar.readkey()

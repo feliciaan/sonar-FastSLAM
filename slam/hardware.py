@@ -24,7 +24,6 @@ class Hardware:
         self.file = testfile
         self.output_file = output_file
         if SERIAL_AVAILABLE and serial_port is not None:
-        if serial_port is not None:
             try:
                 self.serial = Serial(serial_port, 9600, timeout=1)
                  # Different thread for manual control

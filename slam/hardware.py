@@ -55,12 +55,11 @@ class Hardware:
 
     def serial_data(self):
         output = self.output_file if self.output_file else '/dev/null'
-        print(output)
+        print('Writing output to "%s"' % output)
         with open(output, mode='a', newline='\n') as f:
             while True:
                 message = self.serial.readline().decode('utf-8').strip()
-                f.write(message)
-                print(message)
+                print(message, file=f)
                 message = message if message != '' else None
                 if message:
                     yield message

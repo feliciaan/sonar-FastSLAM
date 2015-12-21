@@ -1,6 +1,6 @@
 #include <ZumoMotors.h>
 #include <SoftwareSerial.h>
-#
+
 
 /********************* pin -> color layout and other pins *******************/
 /*** On the jumper ***/
@@ -121,7 +121,6 @@ void setup() {
   bluetooth.println(helpMsg);
   Serial.println(helpMsg);
 
-
   // a second of delay, to give time to disconnect cables etc...
   if (START_MODE == 'a' || START_MODE == 't') {
     for (int i = 0; i < 1000; i += led_speed) {
@@ -147,17 +146,10 @@ void setup() {
     forward();
     delay(1000);
     halt();
-    
   }
-
-
 }
 
-
-
-
-
-/********************* Distance sensors *******************************************/
+/********************* Distance sensors ***************************************/
 
 long read_distance_sensor(const int trigPin, const int echoPin) {
   long duration;
@@ -176,7 +168,7 @@ long read_distance_sensor(const int trigPin, const int echoPin) {
   }
 }
 
-/********************* Order reading and dispatch *******************************************/
+/********************* Order reading and dispatch *****************************/
 
 /* Receives orders from bluetooth
    Returns '_' if no order received
@@ -233,7 +225,6 @@ void send_sensor_data(int left, int front, int right) {
   send_time(send_serial, send_bluetooth);
 }
 
-
 /**
    Sends the time stamp since last update
 */
@@ -249,11 +240,7 @@ void send_time(int update_serial, int update_bluetooth) {
     bluetooth.println(now - last_update_time_bluetooth);
     last_update_time_bluetooth = now;
   }
-
 }
-
-
-
 
 /********************* Motor control *******************************************/
 
@@ -334,7 +321,6 @@ void moveAround(int left, int right) {
   // actually run the motors
   motors.setLeftSpeed(left + correction);
   motors.setRightSpeed(right);
-
 }
 
 char move_dir  = LEFT;
@@ -352,19 +338,14 @@ void auto_move(const int left, const int front, const int right) {
     send_sporadic = 1;
   }
 
-
-
   if (front == OUT_OF_RANGE && right == OUT_OF_RANGE && left == OUT_OF_RANGE) {
     digitalWrite(LED, HIGH);
     mode = "invalid input";
   } else {
     digitalWrite(LED, LOW);
     // valid input
-
     if (front < 10) {
-
       // determine turn direction
-
       if (millis() - last_move > DIR_CHANGE_TIME) {
         // we can choose freely the direction to turn, as the direction holdon expired
         last_move = millis();
@@ -383,9 +364,7 @@ void auto_move(const int left, const int front, const int right) {
         mode = "turning";
       }
       //actually turn
-
       turn(move_dir);
-
     } else {
       mode = "going forward";
       forward();
@@ -413,19 +392,33 @@ void auto_move(const int left, const int front, const int right) {
 
 }
 
+void check_env(const int left, const int front, const int right) {
+ /*
+  * Stop the action when the environment is unsafe
+  */
+if (front < 15 || left < 5 || right < 5) {
+    halt();
+  }
+  else if (front == OUT_OF_RANGE && left == OUT_OF_RANGE && right == OUT_OF_RANGE) {
+    halt();
+  }
+}
 
+void timed_turn(const int dir) {
+  turn(dir);
+  delay(200);
+  halt();
+}
 /***************************************************************************************/
 /********************************* Main Loop *******************************************/
 /***************************************************************************************/
-
-
 void loop() {
   long left, front, right;
   char new_order;
 
-  left = read_distance_sensor(SENSL_TRIG, SENSL_ECHO);
+  left  = read_distance_sensor(SENSL_TRIG, SENSL_ECHO);
   front = read_distance_sensor(SENSF_TRIG, SENSF_ECHO);
-  right  = read_distance_sensor(SENSR_TRIG, SENSR_ECHO);
+  right = read_distance_sensor(SENSR_TRIG, SENSR_ECHO);
 
   send_sensor_data(left, front, right);
 
@@ -443,13 +436,12 @@ void loop() {
     case 'a': auto_move(left, front, right);  break;
     case 'z': forward();                      break;
     case 's': backward();                     break;
-    case 'd': turn(LEFT);                     break;
-    case 'q': turn(RIGHT);                    break;
+    case 'd': timed_turn(LEFT);               break;
+    case 'q': timed_turn(RIGHT);              break;
     case 't': test_motors();                  break;
     case 'x':
     case 'S':
     case ' ': halt();                         break;
-    default : halt();                         break;
+    default : check_env(left, front, right);  break;
   }
-
 }

@@ -8,30 +8,31 @@ from hardware import *
 from pose import Pose
 from motion_model import calculate_pose
 from state import State
+from settings import DEBUG
 import math
 
 INF = 500
 
-hw  = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file='testdata.txt')
+hw    = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file='testdata.txt')
 state = State(cellsize=5)
-old_pose        = Pose(0,0,0)
+state = State(cellsize=5, blocksize=100)
 
-
+old_pose = Pose(0,0,0)
 
 i = 0
 ogm = None
 for update in hw.updates():
-    if i < 3:
-        sys.stdout.write("Processing "+str(update)+'\n')
-        sys.stdout.flush()
+    if DEBUG:
+        print("Old update: %s" % update)
     if isinstance (update, MotionUpdate):
+        print(update)
         state.update(update)
-        particle    = state.particles[0]
+        particle = state.particles[0]
         ogm = particle.map
         pose = particle.pose
         # ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
 
-        cell    = ogm.get_cell(pose.x, pose.y)
+        cell = ogm.get_cell(pose.x, pose.y)
         cell.hasRobot = pose.dir_str()
         cell.set_log_odds(-INF)
         old_pose = pose

@@ -59,9 +59,33 @@ class OccupancyGridMap:
         col = xd
         return smallmap.get_cell(row,col)
 
-    def distance_to_closest_object_in_cone(self, pose, cone_width_angle):
+
+    """
+    Raytraces until a first object is found. Does not search further then max_radius.
+    Keep max_radius quite small (e.g. 130cm or 200cm), as it will get slow otherwise.
+
+    Returns the pareto-front of (distance, log_odds). None-values are ignored
+    """
+    def distance_to_closest_object_in_cone(self, pose, cone_width_angle, max_radius):
         # TODO: plz implement me
-        pass
+        cells   = self.get_cone(pose, cone_width_angle, max_radius)
+        def snd(tupl):
+            (x,y) = tupl
+            return y
+        cells = list(cells)
+        cells.sort(key=snd)
+
+        found = []
+        curr_max = -1
+        for (cell, d) in cells:
+            occupation = cell.occupation
+            if occupation is None:
+                continue
+            if occupation > curr_max:
+                curr_max = cell.get()
+                found.append((d, cell.get_log_odds()))
+
+        return found
 
 
     def get_cone(self, pose, cone_angle, radius):

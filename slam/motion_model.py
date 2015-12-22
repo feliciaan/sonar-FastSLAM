@@ -5,7 +5,7 @@ from pose import Pose
 STD_DEV = .2
 THETA_STD_DEV = .05
 WHEEL_DISTANCE_IN_CM = 8.4
-FACTOR = 1 / 600  # Empirically found
+FACTOR = 1 / (600 * 50)  # Empirically found
 
 """
 Calculates a possible new position, with added gaussian noise.

@@ -35,7 +35,6 @@ for update in hw.updates():
 	if i%25 == 0:
 	    print(ogm)
 	    print(ogm.distance_to_closest_object_in_cone(pose, 0.872664626, 130))
-	    time.sleep(1)
 
 
 print(ogm)

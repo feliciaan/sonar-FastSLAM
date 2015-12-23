@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from tuple_utils import tmin, tsub, tmax, tadd
+
 """
 This map keeps track of the occupancies.
 To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap', which it instantiates as needed.
@@ -19,62 +21,77 @@ class OccupancyGridMap:
 
     def __init__(self, blocksize=100, cellsize=5):
         assert blocksize > 1, "invalid blocksize, >1 expected"
-        assert cellsize > 0, "invalid cellsize, >1 expected"
+        assert cellsize > 0, "invalid cellsize, >0 expected"
         assert blocksize > cellsize, "blocksize should be > cellsize"
         assert blocksize % cellsize == 0, "blocksize should be a multiple of cellsize"
         self.blocksize = blocksize
         self.cellsize = cellsize
-        self.cellsPerSmaller = int(blocksize / cellsize)
-        self.smallmaps = dict()
-        self.xrange = (0, 0)
-        self.yrange = (0, 0)
-        init_kwadrants = [(0, 0)]
-        self.grid = np.zeros(shape=(self.cellsPerSmaller, self.cellsPerSmaller))
-        for (x, y) in init_kwadrants:
-            self._init_map(x, y)
+        self.cells_per_block = self.blocksize/self.cellsize
+        self.minrange = (0, 0)  # (x,y)
+        self.maxrange = (self.cells_per_block, self.cells_per_block)  # (x,y)
+        self.grid = np.zeros(shape=self.maxrange)
 
-    def _init_map(self, x, y):
-        sogm = SimpleOccupancyGridMap(self.cellsPerSmaller, self.cellsPerSmaller)
-        self.smallmaps[(x, y)] = sogm
+        # also create negative blocks, so that we have 4 blocks
+        self.get_cell(-1,-1)
+
+    def _debug(self):
+        print("Grid size:\t(%d,%d)\nMin Range:\t(%d,%d)\nMax Range:\t(%d,%d)" %
+              (self.grid.shape[0], self.grid.shape[1],
+               self.minrange[0], self.minrange[1],
+               self.maxrange[0], self.maxrange[1]))
 
     def get_cell(self, x, y):
         """
         Gets the cell at x, y
         Might initialize new blocks if needed, so don't ask things unless needed
         """
-        smallmap, row, col = self._get_cell(x, y)
-        return smallmap.get_cell(row, col)
+        row, col = self._get_cell(x, y)
+        return self.grid[row, col]
 
     def add_to_cell(self, x, y, val):
-        smallmap, row, col = self._get_cell(x, y)
-        smallmap.add_to_cell(row, col, val)
+        row, col = self._get_cell(x, y)
+        self.grid[row, col] = val
 
     def _get_cell(self, x, y):
         """
-        Gets the cell at x, y
-        Might initialize new blocks if needed, so don't ask things unless needed
+        Gets the cell at x, y (in cm)
+        Might modify the array if needed, so don't ask things unless needed
         """
-        # get smaller map
-        xi = int(x // self.blocksize)
-        yi = int(y // self.blocksize)
-        if (xi, yi) not in self.smallmaps:
-            self._init_map(xi, yi)
-            (xmin, xmax) = self.xrange
-            self.xrange = (min(xmin, xi), max(xmax, xi))
-            (ymin, ymax) = self.yrange
-            self.yrange = (min(ymin, yi), max(ymax, yi))
+        # get cell
+        x /= self.cellsize
+        y /= self.cellsize
 
-        smallmap = self.smallmaps[(xi, yi)]
+        # check out of bounds
+        if x < self.minrange[0] or y < self.minrange[1] or x > self.maxrange[0] or y > self.maxrange[1]:
+            self._increase_grid((x, y))
 
-        # get the coordinates in the smaller map
-        xd = x % self.blocksize
-        yd = y % self.blocksize
-        xd = int(math.floor(xd / self.cellsize))
-        yd = int(math.floor(yd / self.cellsize))
-        row = yd
-        col = xd
+        # get correct x and y cell values
+        x -= self.minrange[0]
+        y -= self.minrange[1]
 
-        return (smallmap, row, col)
+        return x, y
+
+    def _increase_grid(self, out_of_bounds_pos):
+        # get index of block that needs to bed added or blocks to keep rectangular shape
+        signx = math.copysign(1, out_of_bounds_pos[0])
+        signy = math.copysign(1, out_of_bounds_pos[1])
+        new_pos = (signx * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[0]))/self.cells_per_block),
+                   signy * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[1]))/self.cells_per_block))
+
+        current_size = self.grid.shape
+        new_minrange = tmin(self.minrange, new_pos)
+        new_maxrange = tmax(self.maxrange, new_pos)
+
+        new_size = tsub(new_maxrange, new_minrange)
+        offset = tsub(self.minrange, new_minrange)
+        offset_end = tadd(offset, current_size)
+        grid = np.zeros(shape=new_size)
+        grid[offset[0]:offset_end[0], offset[1]:offset_end[1]] = self.grid
+
+        self.grid = grid
+        self.minrange = new_minrange
+        self.maxrange = new_maxrange
+
 
     def distance_to_closest_object_in_cone(self, pose, cone_width_angle, max_radius):
         """
@@ -140,28 +157,21 @@ class OccupancyGridMap:
                 yield ((xi, yi), d)
 
     def build_str(self, border=False):
-        (ymin, ymax) = self.yrange
-        (xmin, xmax) = self.xrange
+        (xmin, ymin) = self.minrange
+        (xmax, ymax) = self.maxrange
         result = ""
-        cellsPerSmaller = self.cellsPerSmaller + (2 if border else 0)
-        emptyRepr = ["░" * cellsPerSmaller] * cellsPerSmaller
-        for y in range(ymax, ymin - 1, -1):
-            lines = [""] * (cellsPerSmaller)
-            for x in range(xmin, xmax + 1):
-                reprs = emptyRepr
-                if (x, y) in self.smallmaps:
-                    reprs = self.smallmaps[(x, y)].build_str(reverse=True, border=border, borderMsg=str((x, y)))
-                    if (x, y) == (0, 0):
-                        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
-                        reprs[-1] = orig_repr + reprs[-1][1:]
+        rows, cols = self.grid.shape
+        proc_grid = procentual_grid(self.grid)
+        for row in proc_grid:
+            for col in row:
+                result += str_cell(col)
+                #if (x, y) == (0, 0):
+                #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
+                #        reprs[-1] = orig_repr + reprs[-1][1:]
+            result += "\n"
 
-                for i in range(0, cellsPerSmaller):
-                    lines[i] = lines[i] + reprs[i]
-            result += "\n" + "\n".join(lines)
-
-        return (
-            "GridMap with blocksize " + str(self.blocksize) + "cm and resolution " + str(
-                self.cellsize) + "cm:\n" + result)
+        return "GridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
+               (self.blocksize, self.cellsize, self.grid.shape, result)
 
     def __str__(self):
         return self.build_str()
@@ -178,54 +188,6 @@ def angle(x0, y0, x1, y1):
     dx = x0 - x1
     dy = y0 - y1
     return (2 * math.pi + math.atan2(dy, dx)) % (2 * math.pi)
-
-
-class SimpleOccupancyGridMap:
-    """
-    Simple occupancy grid map. uses row/col (height/width) indexing, stargint in the upper left corner.
-    Uses ints as indices
-    """
-
-    def __init__(self, height, width):
-        self.width = width
-        self.height = height
-        """
-        Grid[ROW][HEIGHT]
-        """
-        self.grid = np.zeros(shape=(height, width))
-
-    def __iter__(self):
-        return np.nditer(self.grid)
-
-    def __repr__(self):
-        return str(self)
-
-    def build_str(self, reverse=False, border=False, borderMsg=""):
-        borderMsg = " " + borderMsg + " "
-        res = ["╔" + borderMsg + ('═' * (self.width - len(borderMsg))) + "╗"] if border else []
-        grid = self.grid
-        if (reverse):
-            grid = grid[::-1]
-
-        proc_grid = procentual_grid(grid)
-        for row in proc_grid:
-            line = "║" if border else ""
-            for cell in row:
-                line += str_cell(cell)
-            line += "║" if border else ""
-            res.append(line)
-        if border:
-            res.append("╚" + ('═' * self.width) + "╝")
-        return res
-
-    def add_to_cell(self, row, col, val):
-        self.grid[row, col] += val
-
-    def __str__(self):
-        return "\n" + "\n".join(self.build_str(self, border=True))
-
-    def get_cell(self, row, col):
-        return self.grid[row][col]
 
 
 def procentual_grid(grid):

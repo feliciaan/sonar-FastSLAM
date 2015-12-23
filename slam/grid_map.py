@@ -166,8 +166,8 @@ class OccupancyGridMap:
         result = ""
 
         proc_grid = procentual_grid(self.grid)
-        for row in proc_grid:
-            for col in row:
+        for row in proc_grid[::-1]:
+            for col in row[::-1]:
                 result += str_cell(col)
                 #if (x, y) == (0, 0):
                 #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");

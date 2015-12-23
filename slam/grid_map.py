@@ -148,8 +148,9 @@ class OccupancyGridMap:
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
         list = []
-        for xi in range(xmin, xmax, int(self.cellsize // 2)):
-            for yi in range(ymin, ymax, int(self.cellsize // 2)):
+
+        for xi in range(xmin, xmax,self.cellsize):
+            for yi in range(ymin, ymax, self.cellsize):
                 d = distance(x, y, xi, yi)
                 if d > view_distance:
                     continue
@@ -163,7 +164,7 @@ class OccupancyGridMap:
 
     def build_str(self):
         result = ""
-        rows, cols = self.grid.shape
+
         proc_grid = procentual_grid(self.grid)
         for row in proc_grid:
             for col in row:

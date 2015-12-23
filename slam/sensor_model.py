@@ -47,11 +47,11 @@ def update_map(measurements, pose, map_):
 
         cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
         for (cell, d) in cone:
-            relative_dist   = d / measured_dist
+            relative_dist = d / measured_dist
             if relative_dist < 0.8:
-                cell.add_log_odds(_log_odds(0.3))
+                map_.add_to_cell(*cell, val=-0.8472978603872036) # _log_odds(0.3)
             elif measurement:
-                cell.add_log_odds(_log_odds(0.7))
+                map_.add_to_cell(*cell, val=0.8472978603872034) #_log_odds(0.7)
 
 
 def _measurement_per_angle(measurements):

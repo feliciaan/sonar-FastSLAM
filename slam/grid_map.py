@@ -92,7 +92,6 @@ class OccupancyGridMap:
         self.minrange = new_minrange
         self.maxrange = new_maxrange
 
-
     def distance_to_closest_object_in_cone(self, pose, cone_width_angle, max_radius):
         """
         Raytraces until a first object is found. Does not search further then max_radius.
@@ -143,7 +142,7 @@ class OccupancyGridMap:
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
-
+        list = []
         for xi in range(xmin, xmax, int(self.cellsize // 2)):
             for yi in range(ymin, ymax, int(self.cellsize // 2)):
                 d = distance(x, y, xi, yi)
@@ -154,11 +153,10 @@ class OccupancyGridMap:
                 if not ((-view_angle <= anglei <= view_angle) or (-view_angle <= anglei - 2 * math.pi <= view_angle)):
                     continue
 
-                yield ((xi, yi), d)
+                list.append(((xi, yi), d))
+        return list
 
-    def build_str(self, border=False):
-        (xmin, ymin) = self.minrange
-        (xmax, ymax) = self.maxrange
+    def build_str(self):
         result = ""
         rows, cols = self.grid.shape
         proc_grid = procentual_grid(self.grid)

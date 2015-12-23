@@ -7,7 +7,13 @@ class Pose:
         self.theta = theta
 
     def __str__(self):
-        return "Pose: x:"+str(int(self.x))+"cm, y:"+str(int(self.y))+",cm θ:"+str(self.theta)
+
+        degrees = math.degrees(self.theta) % 360
+        if degrees > 180:
+            degrees -= 360
+
+        return "Pose: x:"+str(int(self.x))+"cm, y:"+\
+               str(int(self.y))+",cm θ :"+str(self.theta)+" θ:"+str(degrees)
 
     def dir_str(self):
         chars   = "→↗↑↖←↙↓↘"

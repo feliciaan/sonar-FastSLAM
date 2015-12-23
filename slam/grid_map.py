@@ -57,17 +57,22 @@ class OccupancyGridMap:
         Gets the cell at x, y (in cm)
         Might modify the array if needed, so don't ask things unless needed
         """
+        # save orignal values
+        old_x, old_y = x, y
+
         # get cell
         x /= self.cellsize
         y /= self.cellsize
 
-        # check out of bounds
-        if x < self.minrange[0] or y < self.minrange[1] or x > self.maxrange[0] or y > self.maxrange[1]:
-            self._increase_grid((x, y))
-
         # get correct x and y cell values
         x -= self.minrange[0]
         y -= self.minrange[1]
+
+        # check out of bounds
+        if x < self.minrange[0] or y < self.minrange[1] or x > self.maxrange[0] or y > self.maxrange[1]:
+            self._increase_grid((x, y))
+            # x and y values are possibly changed (offset is different)
+            return self._get_cell(old_x, old_y)
 
         return x, y
 

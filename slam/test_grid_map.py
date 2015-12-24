@@ -13,7 +13,7 @@ import math
 INF = 500
 
 hw = Hardware("../test/testdata-film-feli01.txt")
-state = State(n_particles=20, cellsize=5, blocksize=100)
+state = State(n_particles=1, cellsize=5, blocksize=100)
 
 old_pose = Pose(0, 0, 0)
 

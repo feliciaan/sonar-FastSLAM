@@ -13,7 +13,7 @@ import math
 INF = 500
 
 hw = Hardware("../test/testdata-film-feli01.txt")
-state = State(n_particles=1, cellsize=5, blocksize=100)
+state = State(n_particles=100, cellsize=5, blocksize=100)
 
 old_pose = Pose(0, 0, 0)
 
@@ -39,7 +39,7 @@ for update in hw.updates():
     stop_time = time.time()
     timedelta = update.timedelta - (stop_time - start_time) * 1000
     sumdeltas += timedelta
-    if timedelta > 0:
+    if timedelta < 0:
         print("Slower than updates: %f, current delay %f" % (timedelta, sumdeltas))
     else:
         print("Faster than updates: %f, current delay %f" % (timedelta, sumdeltas))

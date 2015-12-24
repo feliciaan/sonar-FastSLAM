@@ -1,3 +1,4 @@
+from itertools import product
 import math
 import numpy as np
 
@@ -11,6 +12,7 @@ Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
 (0,0) is the cell in the middle of the first grid
 """
 
+PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)] for j in range(0, 300)])
 
 class OccupancyGridMap:
     """
@@ -146,8 +148,8 @@ class OccupancyGridMap:
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
 
-        indices = np.array(
-            [[(i, j) for j in range(ymin, ymax, self.cellsize)] for i in range(xmin, xmax, self.cellsize)])
+        indices = PRECALCULATED_GRID[: (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + ymin
+
         temp = indices - (x, y)
         dist = np.sqrt(np.sum(temp ** 2, axis=2))
         s_dist = dist.copy()

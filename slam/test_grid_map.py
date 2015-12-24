@@ -19,6 +19,7 @@ old_pose = Pose(0, 0, 0)
 
 i = 0
 ogm = None
+sumdeltas = 0
 for update in hw.updates():
     start_time = time.time()
     state.update(update)
@@ -32,14 +33,15 @@ for update in hw.updates():
     cell = -INF
     old_pose = pose
     i += 1
-    if i % 25 == 0:
-        print(ogm)
-        print(ogm.distance_to_closest_object_in_cone(pose, 0.872664626, 130))
+    #if i % 25 == 0:
+    #    print(ogm)
+    #    print(ogm.distance_to_closest_object_in_cone(pose, 0.872664626, 130))
     stop_time = time.time()
-    timedelta = (stop_time - start_time) * 1000
-    if timedelta > update.timedelta:
-        print("Slower than updates: %f" % (update.timedelta - timedelta))
+    timedelta = update.timedelta - (stop_time - start_time) * 1000
+    sumdeltas += timedelta
+    if timedelta > 0:
+        print("Slower than updates: %f, current delay %f" % (timedelta, sumdeltas))
     else:
-        print("Faster than updates: %f" % (update.timedelta - timedelta))
-
+        print("Faster than updates: %f, current delay %f" % (timedelta, sumdeltas))
+print(sumdeltas)
 print(ogm)

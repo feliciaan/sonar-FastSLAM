@@ -162,11 +162,8 @@ class OccupancyGridMap:
         comb = np.minimum(dist, angle)
         d = np.where(comb == 1)
 
-        l = []
         for e in np.transpose(d):
-            l.append((indices[e[0], e[1]], s_dist[e[0], e[1]]))
-        return l
-
+            yield (indices[e[0], e[1]], s_dist[e[0], e[1]])
 
     def build_str(self):
         result = ""

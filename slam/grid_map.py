@@ -12,7 +12,7 @@ Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
 (0,0) is the cell in the middle of the first grid
 """
 
-PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)] for j in range(0, 300)])
+PRECALCULATED_GRID = np.array([[(j, i) for i in range(0, 300)] for j in range(0, 300)])
 
 class OccupancyGridMap:
     """
@@ -30,7 +30,7 @@ class OccupancyGridMap:
         self.cellsize = cellsize
         self.cells_per_block = self.blocksize/self.cellsize
         self.minrange = (0, 0)  # (x,y)
-        self.maxrange = (self.cells_per_block, self.cells_per_block)  # (x,y)
+        self.maxrange = (int(self.cells_per_block), int(self.cells_per_block))  # (x,y)
         self.grid = np.zeros(shape=self.maxrange)
 
         # also create negative blocks, so that we have 4 blocks
@@ -54,6 +54,20 @@ class OccupancyGridMap:
         row, col = self._get_cell(x, y)
         self.grid[row, col] = val
 
+    def check_indices_in_bounds(self, indices):
+        """
+        Check if the indices are in the bounds, otherwise increase
+        :param indices: numpy array with indices
+        :return: nothing, increases grid if necessary
+        """
+        xmin = indices[:, 0].min() # TODO: optimize if necessary
+        xmax = indices[:, 0].max()
+        ymin = indices[:, 1].min()
+        ymax = indices[:, 1].max()
+
+        self._get_cell(xmin, ymin)
+        self._get_cell(xmax, ymax)
+
     def _get_cell(self, x, y):
         """
         Gets the cell at x, y (in cm)
@@ -71,7 +85,7 @@ class OccupancyGridMap:
         y -= self.minrange[1]
 
         # check out of bounds
-        if x < self.minrange[0] or y < self.minrange[1] or x > self.maxrange[0] or y > self.maxrange[1]:
+        if x < self.minrange[0] or y < self.minrange[1] or x >= self.maxrange[0] or y >= self.maxrange[1]:
             self._increase_grid((x, y))
             # x and y values are possibly changed (offset is different)
             return self._get_cell(old_x, old_y)
@@ -82,8 +96,8 @@ class OccupancyGridMap:
         # get index of block that needs to bed added or blocks to keep rectangular shape
         signx = math.copysign(1, out_of_bounds_pos[0])
         signy = math.copysign(1, out_of_bounds_pos[1])
-        new_pos = (signx * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[0]))/self.cells_per_block),
-                   signy * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[1]))/self.cells_per_block))
+        new_pos = (int(signx * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[0]))/self.cells_per_block)),
+                   int(signy * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[1]))/self.cells_per_block)))
 
         current_size = self.grid.shape
         new_minrange = tmin(self.minrange, new_pos)
@@ -163,9 +177,10 @@ class OccupancyGridMap:
 
         comb = np.minimum(dist, angle)
         d = np.where(comb == 1)
+        cone_indices = indices[d]
+        cone_dist = s_dist[d]
 
-        for e in np.transpose(d):
-            yield (indices[e[0], e[1]], s_dist[e[0], e[1]])
+        return cone_indices, cone_dist
 
     def build_str(self):
         result = ""

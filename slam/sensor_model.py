@@ -1,4 +1,5 @@
 import math
+import numpy as np
 from pose import Pose
 
 CONE_ANGLE = 0.872664626  # In radians
@@ -45,13 +46,21 @@ def update_map(measurements, pose, map_):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
-        cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
-        for (cell, d) in cone:
-            relative_dist = d / measured_dist
-            if relative_dist < 0.8:
-                map_.add_to_cell(*cell, val=-0.8472978603872036) # _log_odds(0.3)
-            elif measurement:
-                map_.add_to_cell(*cell, val=0.8472978603872034) #_log_odds(0.7)
+        indices, dist = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
+        if indices.size == 0:
+            continue
+        map_.check_indices_in_bounds(indices)
+
+        # modify to grid indices
+        indices = np.floor_divide(indices, map_.cellsize) - map_.minrange
+
+        cutoff = measured_dist * 0.8
+        empty_indices = indices[dist < cutoff]
+
+        map_.grid[empty_indices[:, 0], empty_indices[:, 1]] += -0.8472978603872036  # _log_odds(0.3)
+        if measurement:
+            non_empty_indices = indices[dist >= cutoff]
+            map_.grid[non_empty_indices[:, 0], non_empty_indices[:, 1]] += 0.8472978603872034  # _log_odds(0.7)
 
 
 def _measurement_per_angle(measurements):

@@ -1,4 +1,5 @@
 import random
+from joblib import Parallel, delayed
 
 import motion_model
 import sensor_model
@@ -29,6 +30,8 @@ class State:
         for particle in self.particles:
             particle.update_motion(self.latest_motion, update.timedelta)
             particle.update_sensor(update)
+
+        #Parallel(n_jobs=4)(delayed(Particle.update_sensor)(particle, update) for particle in self.particles)
 
         self.resample()
 

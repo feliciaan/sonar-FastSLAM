@@ -167,7 +167,7 @@ class OccupancyGridMap:
         temp = indices - (x, y)
         dist = np.sqrt(np.sum(temp ** 2, axis=2))
         s_dist = dist.copy()
-        dist[dist < view_distance] = 1
+        dist[dist <= view_distance] = 1
         dist[dist > view_distance] = 0
 
         angle = (np.arctan2(temp[:, :, 0], temp[:, :, 1]) + np.pi) - theta
@@ -176,7 +176,7 @@ class OccupancyGridMap:
         angle[~(angle == 0.0)] = 1
 
         comb = np.minimum(dist, angle)
-        d = np.where(comb == 1)
+        d = comb == 1
         cone_indices = indices[d]
         cone_dist = s_dist[d]
 

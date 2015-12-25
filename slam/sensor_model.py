@@ -52,7 +52,7 @@ def update_map(measurements, pose, map_):
         map_.check_indices_in_bounds(indices)
 
         # modify to grid indices
-        indices = np.floor_divide(indices, map_.cellsize) - map_.minrange
+        indices = np.rint(indices / map_.cellsize - map_.minrange).astype(np.int)
 
         cutoff = measured_dist * 0.8
         empty_indices = indices[dist < cutoff]

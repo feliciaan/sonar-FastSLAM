@@ -162,7 +162,7 @@ class OccupancyGridMap:
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
 
-        indices = PRECALCULATED_GRID[: (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + ymin
+        indices = PRECALCULATED_GRID[ : (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + (xmin, ymin)
 
         temp = indices - (x, y)
         dist = np.sqrt(np.sum(temp ** 2, axis=2))
@@ -170,9 +170,12 @@ class OccupancyGridMap:
         dist[dist <= view_distance] = 1
         dist[dist > view_distance] = 0
 
+        # TODO: can someone check the angles, not sure if they right
         angle = (np.arctan2(temp[:, :, 0], temp[:, :, 1]) + np.pi) - theta
-        angle[~(((-view_angle <= angle) & (angle <= view_angle)) | ((-view_angle + 2 * np.pi < angle) &
-                                                                    (angle < view_angle + 2 * np.pi)))] = 0
+        angle[~(((-view_angle <= angle) &
+                 (angle <= view_angle)) |
+                ((-view_angle + 2 * np.pi < angle) &
+                 (angle < view_angle + 2 * np.pi)))] = 0
         angle[~(angle == 0.0)] = 1
 
         comb = np.minimum(dist, angle)

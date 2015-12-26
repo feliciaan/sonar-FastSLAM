@@ -154,11 +154,10 @@ class OccupancyGridMap:
     def get_cone(self, pose, cone_angle, radius):
         return self._cells_in_cone(pose.x, pose.y, radius, pose.theta, cone_angle / 2)
 
-    def _cells_in_cone(self, x, y, view_distance, theta, view_angle):
+    def get_cone(self, pose, cone_angle, radius):
         """
         Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
         Angle in radians; this value is the view to the left.
-
         |       /
         |     /
         |   /
@@ -167,25 +166,31 @@ class OccupancyGridMap:
         Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
         Return (cell, distance to x,y)
         """
+        x, y, view_distance, theta, view_angle = pose.x, pose.y, radius, pose.theta, cone_angle / 2
         assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave " + str(view_angle)
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
-        list = []
 
-        for xi in range(xmin, xmax, self.cellsize):
-            for yi in range(ymin, ymax, self.cellsize):
-                d = distance(x, y, xi, yi)
-                if d > view_distance:
-                    continue
-                anglei = angle(xi, yi, x, y) - theta  # [-theta, 2*pi - theta]
-                # view_angle    : [0, pi]
-                if not ((-view_angle <= anglei <= view_angle) or (-view_angle <= anglei - 2 * math.pi <= view_angle)):
-                    continue
+        indices = PRECALCULATED_GRID[: (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + ymin
 
-                list.append(((xi, yi), d))
-        return list
+        temp = indices - (x, y)
+        dist = np.sqrt(np.sum(temp ** 2, axis=2))
+        s_dist = dist.copy()
+        dist[dist < view_distance] = 1
+        dist[dist > view_distance] = 0
+
+        angle = (np.arctan2(temp[:, :, 0], temp[:, :, 1]) + np.pi) - theta
+        angle[~(((-view_angle <= angle) & (angle <= view_angle)) | ((-view_angle + 2 * np.pi < angle) &
+                                                                    (angle < view_angle + 2 * np.pi)))] = 0
+        angle[~(angle == 0.0)] = 1
+
+        comb = np.minimum(dist, angle)
+        d = np.where(comb == 1)
+
+        for e in np.transpose(d):
+            yield (indices[e[0], e[1]], s_dist[e[0], e[1]])
 
     def build_str(self):
         result = ""

@@ -28,8 +28,15 @@ for update in hw.updates():
     pose = particle.pose
 
     robot_headings.append(pose.dir_str())
-    robot_poses.append(ogm.gridcell_position(pose.x,pose.y))
+    robot_poses.append(ogm.gridcell_position(pose.x, pose.y))
 
+    # with open("out.txt", "a") as myfile:
+    #     myfile.write(pose.__str__() + '\n')
+    #
+    #     myfile.write(ogm.__str__())
+    #
+    # print('Until first measurement ....')
+    # exit()
 
     cell = -INF
     old_pose = pose
@@ -49,11 +56,14 @@ for update in hw.updates():
         ogm.set_robot_path(robot_poses)
         ogm.set_robot_path_headings(robot_headings)
 
-
         with open("out.txt", "a") as myfile:
-            myfile.write(pose.__str__())
+            myfile.write(pose.__str__() + '\n')
+
             myfile.write(ogm.__str__())
         print_next = False
+
+        # print('Until first turn ....')
+        # exit()
 
     if 'MotionUpdate(Left: 300	Right: -300' in tmp \
             or 'MotionUpdate(Left: -300	Right: 300' in tmp:
@@ -61,12 +71,10 @@ for update in hw.updates():
 
 stop_time = time.time()
 
-print (robot_poses)
-print (robot_headings)
+print(robot_poses)
+print(robot_headings)
 ogm.set_robot_path(robot_poses)
-
 
 print("elapsed time : ", (stop_time - start_time) * 1000)
 with open("out.txt", "a") as myfile:
     myfile.write(ogm.__str__())
-

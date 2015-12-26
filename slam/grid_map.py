@@ -127,6 +127,9 @@ class OccupancyGridMap:
         Returns the pareto-front of (distance, log_odds). None-values are ignored
         """
         # TODO: plz implement me
+
+
+
         cells = self.get_cone(pose, cone_width_angle, max_radius)
 
         def snd(tupl):

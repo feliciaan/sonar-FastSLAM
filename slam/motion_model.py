@@ -2,10 +2,13 @@ import random
 import math
 from pose import Pose
 
+
 STD_DEV = .2
 THETA_STD_DEV = .05
 WHEEL_DISTANCE_IN_CM = 8.4
-FACTOR = 1 / (600 * 50)  # Empirically found
+# FACTOR = 1 / (600 * 50)  # Empirically found
+FACTOR = 1 / (600 * 5)  # Empirically found
+
 GAUSSIAN_NOISE = False
 
 #   number of ms per 45 degrees depending on surface ...
@@ -21,6 +24,8 @@ def calculate_pose(old_pose, motion, timedelta):
         dx = distance_left * math.cos(old_pose.theta)
         dy = distance_left * math.sin(old_pose.theta)
         dtheta = 0
+
+
     elif distance_left == -distance_right:
         dx, dy = 0, 0
         #dtheta = timedelta * math.pi / (2 * 250)

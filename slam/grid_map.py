@@ -11,6 +11,7 @@ Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
 (0,0) is the cell in the middle of the first grid
 """
 
+PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)] for j in range(0, 300)])
 
 class OccupancyGridMap:
     """

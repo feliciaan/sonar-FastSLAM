@@ -170,12 +170,12 @@ class OccupancyGridMap:
         dist[dist <= view_distance] = 1
         dist[dist > view_distance] = 0
 
-        # TODO: can someone check the angles, not sure if they right
-        angle = (np.arctan2(temp[:, :, 0], temp[:, :, 1]) + np.pi) - theta
+        # TODO: can someone check the angles, not sure if they right ( maybe a factor of pi should be added, but I don't thinks so
+        angle = np.arctan2(temp[:, :, 1], temp[:, :, 0]) - theta
         angle[~(((-view_angle <= angle) &
                  (angle <= view_angle)) |
-                ((-view_angle + 2 * np.pi < angle) &
-                 (angle < view_angle + 2 * np.pi)))] = 0
+                ((-view_angle + 2 * np.pi <= angle) &
+                 (angle <= view_angle + 2 * np.pi)))] = 0
         angle[~(angle == 0.0)] = 1
 
         comb = np.minimum(dist, angle)

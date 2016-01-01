@@ -45,20 +45,27 @@ def _normal_distribution(x, mean, stddev):
 
 def update_map(measurements, pose, map_):
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
-        if measured_dist is None:
-            continue
+        measurement = True
+        if measured_dist is None or measured_dist > 130:
+            measured_dist = 130
+            measurement = False
 
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
+        # print(sensor_pose.__str__() )
+        # print('measured_dist : ',measured_dist)
+
         cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
         for (cell, d) in cone:
-            relative_dist   = d / measured_dist
-            if relative_dist < 0.5:
-                cell.set_log_odds(-50)
-            else:
-                cell.add_log_odds(_log_odds(relative_dist-0.5))
+            relative_dist = d / measured_dist
+            if relative_dist < 0.8:
+                map_.add_to_cell(*cell, val=-0.8472978603872036) # _log_odds(0.3)
+            elif measurement:
+                map_.add_to_cell(*cell, val=0.8472978603872034) #_log_odds(0.7)
 
+        # print("debugging first update_map")
+        # exit()
 
 def _measurement_per_angle(measurements):
     return [

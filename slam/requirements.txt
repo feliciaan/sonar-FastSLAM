@@ -1,0 +1,2 @@
+pyserial==3.0b1
+readchar==0.7

@@ -3,39 +3,45 @@ Walks through the grid map, in a very naive way
 """
 import time
 from grid_map import OccupancyGridMap
-from cell import Cell
 from hardware import *
 from pose import Pose
 from motion_model import calculate_pose
 from state import State
+from settings import DEBUG
 import math
 
 INF = 500
 
-hw  = Hardware('../test/nieuwedata2.txt')
-ogm = OccupancyGridMap(cellsize = 5)
-ogm.get_cell(0,0).hasRobot = '↦'
-state = State()
-old_pose        = Pose(0,0,0)
+hw = Hardware("../test/testdata-film-feli01.txt")
+state = State(n_particles=1, cellsize=5, blocksize=100)
 
-print(ogm)
-
+old_pose = Pose(0, 0, 0)
 
 i = 0
+ogm = None
+sumdeltas = 0
 for update in hw.updates():
-    # print("\n---------------\n")
-    # print(state.latest_motion)
-    # print(update.timedelta)
+    start_time = time.time()
     state.update(update)
-    pose = state.particles[0].pose
-    ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
-    cell    = ogm.get_cell(pose.x, pose.y)
-    cell.hasRobot = pose.dir_str()
-    cell.set_log_odds(-INF)
+    particle = state.particles[0]
+    ogm = particle.map
+    pose = particle.pose
+    # ogm.get_cell(old_pose.x, old_pose.y).hasRobot = None
+
+    cell = ogm.get_cell(pose.x, pose.y)
+    # cell.hasRobot = pose.dir_str() #TODO: save robot path
+    cell = -INF
     old_pose = pose
-    # print(pose)
-    i+=1
-    if i % 100 == 0:
-        print(ogm)
-        time.sleep(update.timedelta/1000)
-        break;
+    i += 1
+    #if i % 25 == 0:
+    #    print(ogm)
+    #    print(ogm.distance_to_closest_object_in_cone(pose, 0.872664626, 130))
+    stop_time = time.time()
+    timedelta = update.timedelta - (stop_time - start_time) * 1000
+    sumdeltas += timedelta
+    if timedelta < 0:
+        print("Slower than updates: %f, current delay %f" % (timedelta, sumdeltas))
+    else:
+        print("Faster than updates: %f, current delay %f" % (timedelta, sumdeltas))
+print(sumdeltas)
+print(ogm)

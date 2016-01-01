@@ -2,11 +2,17 @@ import random
 import math
 from pose import Pose
 
+
 STD_DEV = .2
 THETA_STD_DEV = .05
 WHEEL_DISTANCE_IN_CM = 8.4
-FACTOR = 1 / 600  # Empirically found
+# FACTOR = 1 / (600 * 50)  # Empirically found
+FACTOR = 1 / (600 * 5)  # Empirically found
 
+GAUSSIAN_NOISE = False
+
+#   number of ms per 45 degrees depending on surface ...
+MS_PER_45_DEGREES = 200
 """
 Calculates a possible new position, with added gaussian noise.
 """
@@ -18,9 +24,12 @@ def calculate_pose(old_pose, motion, timedelta):
         dx = distance_left * math.cos(old_pose.theta)
         dy = distance_left * math.sin(old_pose.theta)
         dtheta = 0
+
+
     elif distance_left == -distance_right:
         dx, dy = 0, 0
-        dtheta = timedelta * math.pi / (2 * 250)
+        #dtheta = timedelta * math.pi / (2 * 250)
+        dtheta = timedelta * (math.pi / 4 ) / MS_PER_45_DEGREES
         if distance_left > distance_right:
             dtheta *= -1
     else:
@@ -36,6 +45,11 @@ def calculate_pose(old_pose, motion, timedelta):
     dtheta_with_noise = (random.gauss(dtheta, THETA_STD_DEV)
                          if dtheta != 0 else 0)
 
-    return Pose(old_pose.x + dx_with_noise,
-                old_pose.y + dy_with_noise,
-                old_pose.theta + dtheta_with_noise)
+    if GAUSSIAN_NOISE:
+        return Pose(old_pose.x + dx_with_noise,
+                    old_pose.y + dy_with_noise,
+                    old_pose.theta + dtheta_with_noise)
+    else:
+        return Pose(old_pose.x + dx,
+                    old_pose.y + dy,
+                    old_pose.theta + dtheta)

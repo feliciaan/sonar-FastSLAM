@@ -1,4 +1,3 @@
-from itertools import product
 import math
 import numpy as np
 
@@ -13,6 +12,7 @@ Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
 """
 
 PRECALCULATED_GRID = np.array([[(j, i) for i in range(0, 300)] for j in range(0, 300)])
+
 
 class OccupancyGridMap:
     """
@@ -33,8 +33,24 @@ class OccupancyGridMap:
         self.maxrange = (int(self.cells_per_block), int(self.cells_per_block))  # (x,y)
         self.grid = np.zeros(shape=self.maxrange)
 
+        # save the robot path
+        # [ (x,y), (x,y), (x,y), ... ] (x,y) --> position in gridmap (indices)
+        self.path = []
+        # poses corresponding to the path positions
+        self.path_headings = None
+
+
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1,-1)
+
+    def get_cell_size(self):
+        return self.cellsize
+
+    def set_robot_path_headings(self, path_headings):
+        self.path_headings = path_headings
+
+    def set_robot_path(self, path):
+        self.path = path
 
     def _debug(self):
         print("Grid size:\t(%d,%d)\nMin Range:\t(%d,%d)\nMax Range:\t(%d,%d)" %
@@ -92,6 +108,12 @@ class OccupancyGridMap:
 
         return x, y
 
+    def gridcell_position(self, x, y):
+        # pose
+        # need to return x and y index of self.grid
+        x,y = self._get_cell(x, y)
+        return int(x), int(y)
+
     def _increase_grid(self, out_of_bounds_pos):
         # get index of block that needs to bed added or blocks to keep rectangular shape
         signx = math.copysign(1, out_of_bounds_pos[0])
@@ -121,6 +143,9 @@ class OccupancyGridMap:
         Returns the pareto-front of (distance, log_odds). None-values are ignored
         """
         # TODO: plz implement me
+
+
+
         cells = self.get_cone(pose, cone_width_angle, max_radius)
 
         def snd(tupl):
@@ -146,7 +171,6 @@ class OccupancyGridMap:
         """
         Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
         Angle in radians; this value is the view to the left.
-
         |       /
         |     /
         |   /
@@ -161,7 +185,6 @@ class OccupancyGridMap:
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
-
         indices = PRECALCULATED_GRID[ : (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + (xmin, ymin)
 
         temp = indices - (x, y)
@@ -189,10 +212,48 @@ class OccupancyGridMap:
         result = ""
 
         proc_grid = procentual_grid(self.grid)
-        for row in proc_grid:
-            for col in row:
-                result += str_cell(col)
-                #if (x, y) == (0, 0):
+
+
+        robot_path_map= []
+        # Calculate the matrix with robot path
+        length_i = len(proc_grid[::-1])
+        for i, row in enumerate(proc_grid[::-1]):
+            length_j = len(row[::-1])
+            slice = []
+            for j, col in enumerate(row[::]):
+                slice.append('X')
+            robot_path_map.append(slice)
+
+        # Iterate over the matrix presentation and add the known robot path headings
+        for index, pose in enumerate(self.path):
+            i = pose[0]
+            j = pose[1]
+            length_i = len(robot_path_map)
+            length_j = len(robot_path_map[i])
+            robot_path_map[length_i-i][j]= self.path_headings[index]
+
+
+
+        # for x in robot_path_map:
+        #     print (x)
+        # exit()
+
+        length_i = len(proc_grid[::-1])
+        for i, row in enumerate(proc_grid[::-1]):
+            length_j = len(row[::-1])
+            for j, col in enumerate(row[::]):
+                # Check if row,col is on the robot path
+                # optimize performance
+                # array --> matrix
+                heading = robot_path_map[i][j]
+                if heading is not 'X':
+                    result += heading
+                # if self.path is not None and (length_i-i, length_j-j) in self.path:
+                #     print ('yes')
+                #     result += '*'
+                else:
+                    result += str_cell(col)
+                # if (x, y) == (0, 0):
                 #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
                 #        reprs[-1] = orig_repr + reprs[-1][1:]
             result += "\n"
@@ -202,6 +263,19 @@ class OccupancyGridMap:
 
     def __str__(self):
         return self.build_str()
+
+
+def distance(x0, y0, x1, y1):
+    return math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
+
+
+def angle(x0, y0, x1, y1):
+    """
+    Returns the angle between the two coordinates, expressed in [0,2*pi]
+    """
+    dx = x0 - x1
+    dy = y0 - y1
+    return (2 * math.pi + math.atan2(dy, dx)) % (2 * math.pi)
 
 
 def procentual_grid(grid):

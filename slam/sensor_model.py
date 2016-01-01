@@ -1,22 +1,32 @@
 import math
 from pose import Pose
 
+MAX_RANGE = 100  # In cm
 CONE_ANGLE = 0.872664626  # In radians
 PROBABILITY_FREE = 0.0001
-RECOGNITION_SENSITIVITY = 5
+RECOGNITION_SENSITIVITY = 5  # In cm
 
 
 def calc_weight(measurements, pose, map_):
     probability = 1
     return probability # TODO remove
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
-        if measured_dist is None:
-            continue
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
         # TODO: what if no expected distance is known? Fixed -> weight
         expected_distance = \
             map_.distance_to_closest_object_in_cone(sensor_pose, CONE_ANGLE)
+
+        if measured_dist is None:
+            if expected_distance > MAX_RANGE:
+                # It's correct as far as we know; our sensor doesn't go this
+                # far. Just ignore this sensor for all particles.
+                continue
+            else:
+                # We'll assume we measured something at the maximum measurable
+                # range.
+                measured_dist = MAX_RANGE
+
         probability *= _prob_of_distances(measured_dist, expected_distance)
 
     return probability

@@ -66,9 +66,9 @@ class OccupancyGridMap:
         row, col = self._get_cell(x, y)
         self.grid[row, col] = val
 
-    def check_indices_in_bounds(self, indices):
+    def _ensure_coordinates_exist(self, coordinates):
         """
-        Check if the indices are in the bounds, otherwise increase
+        Check if the x,y coordinates are in the bounds, otherwise increase grid
         :param indices: numpy array with indices
         :return: nothing, increases grid if necessary
         """
@@ -212,6 +212,8 @@ class OccupancyGridMap:
                              & (rel_angles <= view_angle))
 
         within_cone = within_view_distance & within_cone_angle
+
+        _ensure_coordinates_exist(coordinates[within_cone])
 
         return coordinates[within_cone], distances[within_cone]
 

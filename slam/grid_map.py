@@ -33,8 +33,10 @@ class OccupancyGridMap:
         self.blocksize = blocksize
         self.cellsize = cellsize
         self.cells_per_block = self.blocksize / self.cellsize
-        self.minrange = (0, 0)  # (x,y)
-        self.maxrange = (int(self.cells_per_block), int(self.cells_per_block))  # (x,y)
+        # The lowest x,y coordinates, divided by cellsize
+        self.minrange = 0, 0
+        # The highest x,y coordinate, divided by cellsize
+        self.maxrange = int(self.cells_per_block), int(self.cells_per_block)
         self.grid = np.zeros(shape=self.maxrange)
 
         # save the robot path by saving all the poses
@@ -79,34 +81,31 @@ class OccupancyGridMap:
 
     def _get_cell(self, x, y):
         """
-        Gets the cell at x, y (in cm)
-        Might modify the array if needed, so don't ask things unless needed
+        Gets the (row, column) coordinates of the cell at x, y (in cm)
+        Might modify the array if needed, so don't ask things unless needed.
         """
-        # save orignal values
-        old_x, old_y = x, y
 
-        # get cell
-        x /= self.cellsize
-        y /= self.cellsize
+        row, col = self.cartesian2grid(x, y)
 
-        # get correct x and y cell values
-        x -= self.minrange[0]
-        y -= self.minrange[1]
+        # Check for out of bounds
+        if (row < 0 or col < 0
+                or row >= self.grid.shape[0] or col >= self.grid.shape[1]):
+            self._increase_grid((row, col))
+            # Recalculate with new grid
+            return self._get_cell(x, y)
 
-        # check out of bounds
-        if x < self.minrange[0] or y < self.minrange[1] or x >= self.maxrange[0] or y >= self.maxrange[1]:
-            self._increase_grid((x, y))
-            # x and y values are possibly changed (offset is different)
-            return self._get_cell(old_x, old_y)
-
-        return x, y
+        return row, col
 
     def _increase_grid(self, out_of_bounds_pos):
-        # get index of block that needs to bed added or blocks to keep rectangular shape
-        signx = math.copysign(1, out_of_bounds_pos[0])
-        signy = math.copysign(1, out_of_bounds_pos[1])
-        new_pos = (int(signx * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[0]))/self.cells_per_block)),
-                   int(signy * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[1]))/self.cells_per_block)))
+        """
+        Extends the grid so the row,col coordinates in out_of_bounds_pos
+        fall within the grid.
+        """
+        # get index of block that needs to be added or blocks to keep rectangular shape
+        sign_row = math.copysign(1, out_of_bounds_pos[0])
+        sign_col = math.copysign(1, out_of_bounds_pos[1])
+        new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[0]) / self.cells_per_block)),
+                   int(sign_col * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[1]) / self.cells_per_block)))
 
         current_size = self.grid.shape
         new_minrange = tmin(self.minrange, new_pos)
@@ -184,9 +183,10 @@ class OccupancyGridMap:
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
+        rowmin, colmin = self.cartesian2grid(xmin, ymin)
+        rowmax, colmax = self.cartesian2grid(xmax, ymax)
 
-        grid_size = ((xmax - xmin) / self.cellsize,
-                     (ymax - ymin) / self.cellsize)
+        grid_size = rowmax - rowmin, colmax - colmin
         coordinates = (COORDINATE_GRID[:grid_size[0], :grid_size[1], :]
                        * self.cellsize + (xmin, ymin))
         rel_coords = coordinates - (x, y)
@@ -205,14 +205,24 @@ class OccupancyGridMap:
 
         return coordinates[within_cone], distances[within_cone]
 
+    def cartesian2grid(self, x, y):
+        row = y / self.cellsize - self.minrange[1]
+        col = x / self.cellsize - self.minrange[0]
+        return row, col
+
+    def grid2cartesian(self, row, col):
+        x = (col + self.minrange[0]) * self.cellsize
+        y = (row + self.minrange[1]) * self.cellsize
+        return x, y
+
     def __str__(self):
         proc_grid = procentual_grid(self.grid)
         str_grid = np.vectorize(str_cell)(proc_grid)
 
         # add all poses to map
         for pose in self.path:
-            x, y = self._get_cell(pose.x, pose.y)
-            str_grid[x, y] = pose.dir_str()
+            row, col = self._get_cell(pose.x, pose.y)
+            str_grid[row, col] = pose.dir_str()
 
         # add start to map
         str_grid[self._get_cell(0, 0)] = 'X'

@@ -65,7 +65,7 @@ def update_map(measurements, pose, map_):
         cutoff = measured_dist * 0.8
         empty_indices = indices[dist < cutoff]
 
-        map_.grid[empty_indices[:, 0], empty_indices[:, 1]] += -0.8472978603872036  # _log_odds(0.3)
+        map_.grid[empty_indices[:, 0], empty_indices[:, 1]] += -0.8472978603872026  # _log_odds(0.3) - 10^-14 #...26 -> ...36
         if measurement:
             non_empty_indices = indices[dist >= cutoff]
             map_.grid[non_empty_indices[:, 0], non_empty_indices[:, 1]] += 0.8472978603872034  # _log_odds(0.7)

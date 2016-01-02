@@ -57,7 +57,6 @@ def update_map(measurements, pose, map_):
         indices, dist = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
         if indices.size == 0:
             continue
-        map_.check_indices_in_bounds(indices)
 
         # modify to grid indices
         indices = np.rint(indices / map_.cellsize - map_.minrange).astype(np.int)

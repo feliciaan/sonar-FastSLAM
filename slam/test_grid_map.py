@@ -13,10 +13,9 @@ import math
 INF = 500
 
 hw = Hardware("../test/testdata-film-feli01.txt")
-state = State(n_particles=1, cellsize=5, blocksize=100)
+state = State(n_particles=50, cellsize=5, blocksize=100)
 
 old_pose = Pose(0, 0, 0)
-
 i = 0
 ogm = None
 sumdeltas = 0
@@ -45,4 +44,4 @@ for update in hw.updates():
     else:
         print("Faster than updates: %f, current delay %f" % (timedelta, sumdeltas))
 print(sumdeltas)
-print(ogm)
+print(repr(ogm))

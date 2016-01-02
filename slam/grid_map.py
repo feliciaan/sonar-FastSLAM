@@ -11,7 +11,9 @@ Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
 (0,0) is the cell in the middle of the first grid
 """
 
-PRECALCULATED_GRID = np.array([[(j, i) for i in range(0, 300)] for j in range(0, 300)])
+MAX_SIZE = 300
+COORDINATE_GRID = np.array([[(i, j) for j in range(0, MAX_SIZE)]
+                            for i in range(0, MAX_SIZE)])
 
 
 class OccupancyGridMap:
@@ -167,102 +169,105 @@ class OccupancyGridMap:
 
         return found
 
-    def get_cone(self, pose, cone_angle, radius):
+    def get_cone(self, pose, cone_angle, view_distance):
         """
-        Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
-        Angle in radians; this value is the view to the left.
-        |       /
-        |     /
-        |   /
-        | /
-        +---------
-        Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
-        Return (cell, distance to x,y)
+        Gives cell coordinates in the specified cone.
+
+        Args:
+            pose: The coordinates of the apex and the angle of the cone
+            cone_angle: The angle (in radians) between the left and right edge
+                of the cone
+            view_distance: The radius of the cone
+
+        Example cone:
+            |       /
+            |     /
+            |   /
+            | /
+            +---------
+            pose.theta: 45°
+            cone_angle = 90° (45° left of theta and 45° right of theta)
+
+        Returns (cell-coordinates array, array of distances to (x,y))
         """
-        x, y, view_distance, theta, view_angle = pose.x, pose.y, radius, pose.theta, cone_angle / 2
-        assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave " + str(view_angle)
+
+        x, y, theta = pose.x, pose.y, pose.theta
+        view_angle = cone_angle / 2
+        assert 0 <= view_angle <= math.pi, (
+            'A view angle of more then 180° is not permitted; '
+            'you gave %s rad.').format(view_angle)
+
+        # TODO: limit bounding box
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
-        indices = PRECALCULATED_GRID[ : (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + (xmin, ymin)
 
-        temp = indices - (x, y)
-        dist = np.sqrt(np.sum(temp ** 2, axis=2))
-        s_dist = dist.copy()
-        dist[dist <= view_distance] = 1
-        dist[dist > view_distance] = 0
+        grid_size = ((xmax - xmin) / self.cellsize,
+                     (ymax - ymin) / self.cellsize)
+        coordinates = (COORDINATE_GRID[:grid_size[0], :grid_size[1], :]
+                       * self.cellsize + (xmin, ymin))
+        rel_coords = coordinates - (x, y)
 
-        # TODO: can someone check the angles, not sure if they right ( maybe a factor of pi should be added, but I don't thinks so
-        angle = np.arctan2(temp[:, :, 1], temp[:, :, 0]) - theta
-        angle[~(((-view_angle <= angle) &
-                 (angle <= view_angle)) |
-                ((-view_angle + 2 * np.pi <= angle) &
-                 (angle <= view_angle + 2 * np.pi)))] = 0
-        angle[~(angle == 0.0)] = 1
+        distances = np.sqrt(np.sum(rel_coords ** 2, axis=2))
+        within_view_distance = distances <= view_distance
 
-        comb = np.minimum(dist, angle)
-        d = comb == 1
-        cone_indices = indices[d]
-        cone_dist = s_dist[d]
+        angles = np.arctan2(rel_coords[:, :, 1], rel_coords[:, :, 0])
+        rel_angles = angles + np.pi - (theta % (2 * np.pi))
+        within_cone_angle = ((-view_angle <= rel_angles)
+                             & (rel_angles <= view_angle))
 
-        return cone_indices, cone_dist
+        within_cone = within_view_distance & within_cone_angle
 
-    def build_str(self):
-        result = ""
-
-        proc_grid = procentual_grid(self.grid)
-
-
-        robot_path_map= []
-        # Calculate the matrix with robot path
-        length_i = len(proc_grid[::-1])
-        for i, row in enumerate(proc_grid[::-1]):
-            length_j = len(row[::-1])
-            slice = []
-            for j, col in enumerate(row[::]):
-                slice.append('X')
-            robot_path_map.append(slice)
-
-        # Iterate over the matrix presentation and add the known robot path headings
-        for index, pose in enumerate(self.path):
-            i = pose[0]
-            j = pose[1]
-            length_i = len(robot_path_map)
-            length_j = len(robot_path_map[i])
-            robot_path_map[length_i-i][j]= self.path_headings[index]
-
-
-
-        # for x in robot_path_map:
-        #     print (x)
-        # exit()
-
-        length_i = len(proc_grid[::-1])
-        for i, row in enumerate(proc_grid[::-1]):
-            length_j = len(row[::-1])
-            for j, col in enumerate(row[::]):
-                # Check if row,col is on the robot path
-                # optimize performance
-                # array --> matrix
-                heading = robot_path_map[i][j]
-                if heading is not 'X':
-                    result += heading
-                # if self.path is not None and (length_i-i, length_j-j) in self.path:
-                #     print ('yes')
-                #     result += '*'
-                else:
-                    result += str_cell(col)
-                # if (x, y) == (0, 0):
-                #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
-                #        reprs[-1] = orig_repr + reprs[-1][1:]
-            result += "\n"
-
-        return "GridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
-               (self.blocksize, self.cellsize, self.grid.shape, result)
+        return coordinates[within_cone], distances[within_cone]
 
     def __str__(self):
-        return self.build_str()
+        proc_grid = procentual_grid(self.grid)
+        str_grid = np.vectorize(str_cell)(proc_grid)
+
+        return '\n'.join(''.join(row) for row in str_grid[::-1])
+
+        #  robot_path_map= []
+        #  # Calculate the matrix with robot path
+        #  length_i = len(proc_grid[::-1])
+        #  for i, row in enumerate(proc_grid[::-1]):
+        #      length_j = len(row[::-1])
+        #      slice = []
+        #      for j, col in enumerate(row[::]):
+        #          slice.append('X')
+        #      robot_path_map.append(slice)
+
+        #  # Iterate over the matrix presentation and add the known robot path headings
+        #  for index, pose in enumerate(self.path):
+        #      i = pose[0]
+        #      j = pose[1]
+        #      length_i = len(robot_path_map)
+        #      length_j = len(robot_path_map[i])
+        #      robot_path_map[length_i-i][j]= self.path_headings[index]
+
+        #  length_i = len(proc_grid[::-1])
+        #  for i, row in enumerate(proc_grid[::-1]):
+        #      length_j = len(row[::-1])
+        #      for j, col in enumerate(row[::]):
+        #          # Check if row,col is on the robot path
+        #          # optimize performance
+        #          # array --> matrix
+        #          heading = robot_path_map[i][j]
+        #          if heading is not 'X':
+        #              result += heading
+        #          # if self.path is not None and (length_i-i, length_j-j) in self.path:
+        #          #     print ('yes')
+        #          #     result += '*'
+        #          else:
+        #              result += str_cell(col)
+        #          # if (x, y) == (0, 0):
+        #          #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
+        #          #        reprs[-1] = orig_repr + reprs[-1][1:]
+        #      result += "\n"
+
+    def __repr__(self):
+        return "OccupancyGridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
+               (self.blocksize, self.cellsize, self.grid.shape, self)
 
 
 def distance(x0, y0, x1, y1):
@@ -279,6 +284,7 @@ def angle(x0, y0, x1, y1):
 
 
 def procentual_grid(grid):
+    """Converts a log odds grid to a percentual grid."""
     return 1 - 1 / (1 + np.exp(np.minimum(500, grid)))
 
 

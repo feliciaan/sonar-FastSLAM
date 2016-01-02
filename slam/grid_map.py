@@ -71,13 +71,17 @@ class OccupancyGridMap:
     def _ensure_coordinates_exist(self, coordinates):
         """
         Check if the x,y coordinates are in the bounds, otherwise increase grid
-        :param indices: numpy array with indices
+        :param coordinates: numpy array with indices
         :return: nothing, increases grid if necessary
         """
-        xmin = indices[:, 0].min() # TODO: optimize if necessary
-        xmax = indices[:, 0].max()
-        ymin = indices[:, 1].min()
-        ymax = indices[:, 1].max()
+
+        if coordinates.size == 0:
+            return
+
+        xmin = coordinates[:, 0].min() # TODO: optimize if necessary
+        xmax = coordinates[:, 0].max()
+        ymin = coordinates[:, 1].min()
+        ymax = coordinates[:, 1].max()
 
         self._get_cell(xmin, ymin)
         self._get_cell(xmax, ymax)

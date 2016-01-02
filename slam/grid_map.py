@@ -35,12 +35,9 @@ class OccupancyGridMap:
         self.maxrange = (int(self.cells_per_block), int(self.cells_per_block))  # (x,y)
         self.grid = np.zeros(shape=self.maxrange)
 
-        # save the robot path
-        # [ (x,y), (x,y), (x,y), ... ] (x,y) --> position in gridmap (indices)
+        # save the robot path by saving all the poses
+        # [ Pose @ time 0, Pose @ time 1, ... ]
         self.path = []
-        # poses corresponding to the path positions
-        self.path_headings = None
-
 
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1,-1)
@@ -48,11 +45,8 @@ class OccupancyGridMap:
     def get_cell_size(self):
         return self.cellsize
 
-    def set_robot_path_headings(self, path_headings):
-        self.path_headings = path_headings
-
-    def set_robot_path(self, path):
-        self.path = path
+    def add_pose(self, pose):
+        self.path.append(pose)
 
     def _debug(self):
         print("Grid size:\t(%d,%d)\nMin Range:\t(%d,%d)\nMax Range:\t(%d,%d)" %
@@ -224,6 +218,14 @@ class OccupancyGridMap:
     def __str__(self):
         proc_grid = procentual_grid(self.grid)
         str_grid = np.vectorize(str_cell)(proc_grid)
+
+        # add all poses to map
+        for pose in self.path:
+            x, y = self._get_cell(pose.x, pose.y)
+            str_grid[x, y] = pose.dir_str()
+
+        # add start to map
+        str_grid[self._get_cell(0, 0)] = 'X'
 
         return '\n'.join(''.join(row) for row in str_grid[::-1])
 

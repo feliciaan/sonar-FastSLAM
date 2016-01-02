@@ -5,10 +5,12 @@ from tuple_utils import tmin, tsub, tmax, tadd
 
 """
 This map keeps track of the occupancies.
-To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap', which it instantiates as needed.
-Infinite going left and right is thus permited, without using to much memory.
-Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
-(0,0) is the cell in the middle of the first grid
+
+To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap',
+which it instantiates as needed. Infinite going left and right is thus
+permited, without using to much memory. Indexing is done in a x/y fashion,
+where individual cells are 'cellsize'. (0,0) is the cell in the middle of the
+first grid.
 """
 
 MAX_SIZE = 300
@@ -18,8 +20,8 @@ COORDINATE_GRID = np.array([[(i, j) for j in range(0, MAX_SIZE)]
 
 class OccupancyGridMap:
     """
-    Blocksize in centimeters. Blocksize indicate how much is instantiated in one go, when out of bounds.
-    Cellsize in centimeters.
+    Blocksize in centimeters. Blocksize indicate how much is instantiated in
+    one go, when out of bounds. Cellsize in centimeters.
     Defaults: blocks of 1m, one cell is 5cm; 400 cells per block
     """
 
@@ -30,7 +32,7 @@ class OccupancyGridMap:
         assert blocksize % cellsize == 0, "blocksize should be a multiple of cellsize"
         self.blocksize = blocksize
         self.cellsize = cellsize
-        self.cells_per_block = self.blocksize/self.cellsize
+        self.cells_per_block = self.blocksize / self.cellsize
         self.minrange = (0, 0)  # (x,y)
         self.maxrange = (int(self.cells_per_block), int(self.cells_per_block))  # (x,y)
         self.grid = np.zeros(shape=self.maxrange)
@@ -40,7 +42,7 @@ class OccupancyGridMap:
         self.path = []
 
         # also create negative blocks, so that we have 4 blocks
-        self.get_cell(-1,-1)
+        self.get_cell(-1, -1)
 
     def get_cell_size(self):
         return self.cellsize
@@ -107,7 +109,7 @@ class OccupancyGridMap:
     def gridcell_position(self, x, y):
         # pose
         # need to return x and y index of self.grid
-        x,y = self._get_cell(x, y)
+        x, y = self._get_cell(x, y)
         return int(x), int(y)
 
     def _increase_grid(self, out_of_bounds_pos):
@@ -138,9 +140,6 @@ class OccupancyGridMap:
 
         Returns the pareto-front of (distance, log_odds). None-values are ignored
         """
-        # TODO: plz implement me
-
-
 
         cells = self.get_cone(pose, cone_width_angle, max_radius)
 

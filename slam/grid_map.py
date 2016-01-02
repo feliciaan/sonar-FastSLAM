@@ -229,44 +229,6 @@ class OccupancyGridMap:
 
         return '\n'.join(''.join(row) for row in str_grid[::-1])
 
-        #  robot_path_map= []
-        #  # Calculate the matrix with robot path
-        #  length_i = len(proc_grid[::-1])
-        #  for i, row in enumerate(proc_grid[::-1]):
-        #      length_j = len(row[::-1])
-        #      slice = []
-        #      for j, col in enumerate(row[::]):
-        #          slice.append('X')
-        #      robot_path_map.append(slice)
-
-        #  # Iterate over the matrix presentation and add the known robot path headings
-        #  for index, pose in enumerate(self.path):
-        #      i = pose[0]
-        #      j = pose[1]
-        #      length_i = len(robot_path_map)
-        #      length_j = len(robot_path_map[i])
-        #      robot_path_map[length_i-i][j]= self.path_headings[index]
-
-        #  length_i = len(proc_grid[::-1])
-        #  for i, row in enumerate(proc_grid[::-1]):
-        #      length_j = len(row[::-1])
-        #      for j, col in enumerate(row[::]):
-        #          # Check if row,col is on the robot path
-        #          # optimize performance
-        #          # array --> matrix
-        #          heading = robot_path_map[i][j]
-        #          if heading is not 'X':
-        #              result += heading
-        #          # if self.path is not None and (length_i-i, length_j-j) in self.path:
-        #          #     print ('yes')
-        #          #     result += '*'
-        #          else:
-        #              result += str_cell(col)
-        #          # if (x, y) == (0, 0):
-        #          #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
-        #          #        reprs[-1] = orig_repr + reprs[-1][1:]
-        #      result += "\n"
-
     def __repr__(self):
         return "OccupancyGridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
                (self.blocksize, self.cellsize, self.grid.shape, self)

@@ -59,7 +59,7 @@ class OccupancyGridMap:
 
     def add_to_cell(self, x, y, val):
         row, col = self._get_cell(x, y)
-        self.grid[row, col] = val
+        self.grid[row, col] += val
 
     def _ensure_coordinates_exist(self, coordinates):
         """
@@ -71,7 +71,7 @@ class OccupancyGridMap:
         if coordinates.size == 0:
             return
 
-        xmin = coordinates[:, 0].min() # TODO: optimize if necessary
+        xmin = coordinates[:, 0].min()  # TODO: optimize if necessary
         xmax = coordinates[:, 0].max()
         ymin = coordinates[:, 1].min()
         ymax = coordinates[:, 1].max()

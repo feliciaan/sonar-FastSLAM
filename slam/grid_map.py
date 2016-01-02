@@ -234,19 +234,6 @@ class OccupancyGridMap:
                (self.blocksize, self.cellsize, self.grid.shape, self)
 
 
-def distance(x0, y0, x1, y1):
-    return math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
-
-
-def angle(x0, y0, x1, y1):
-    """
-    Returns the angle between the two coordinates, expressed in [0,2*pi]
-    """
-    dx = x0 - x1
-    dy = y0 - y1
-    return (2 * math.pi + math.atan2(dy, dx)) % (2 * math.pi)
-
-
 def procentual_grid(grid):
     """Converts a log odds grid to a percentual grid."""
     return 1 - 1 / (1 + np.exp(np.minimum(500, grid)))

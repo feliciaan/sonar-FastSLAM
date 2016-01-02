@@ -28,7 +28,7 @@ for update in hw.updates():
     pose = particle.pose
 
     robot_headings.append(pose.dir_str())
-    robot_poses.append(ogm.gridcell_position(pose.x, pose.y))
+    robot_poses.append(ogm.get_cell(pose.x, pose.y))
 
     # with open("out.txt", "a") as myfile:
     #     myfile.write(pose.__str__() + '\n')

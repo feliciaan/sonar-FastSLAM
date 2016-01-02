@@ -44,17 +44,8 @@ class OccupancyGridMap:
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1, -1)
 
-    def get_cell_size(self):
-        return self.cellsize
-
     def add_pose(self, pose):
         self.path.append(pose)
-
-    def _debug(self):
-        print("Grid size:\t(%d,%d)\nMin Range:\t(%d,%d)\nMax Range:\t(%d,%d)" %
-              (self.grid.shape[0], self.grid.shape[1],
-               self.minrange[0], self.minrange[1],
-               self.maxrange[0], self.maxrange[1]))
 
     def get_cell(self, x, y):
         """
@@ -109,12 +100,6 @@ class OccupancyGridMap:
             return self._get_cell(old_x, old_y)
 
         return x, y
-
-    def gridcell_position(self, x, y):
-        # pose
-        # need to return x and y index of self.grid
-        x, y = self._get_cell(x, y)
-        return int(x), int(y)
 
     def _increase_grid(self, out_of_bounds_pos):
         # get index of block that needs to bed added or blocks to keep rectangular shape

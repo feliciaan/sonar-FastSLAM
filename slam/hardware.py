@@ -1,26 +1,24 @@
 import re
-
 import threading
-import time
+
 SERIAL_AVAILABLE = True
+try:
+    from serial import Serial
+    from serial.serialutil import SerialException
+except ImportError:
+    print("Importing serial failed! Only file imports will be supported")
+    SERIAL_AVAILABLE = False
+
 READCHAR_AVAILABLE = True
-
 try:
-        from serial import Serial
-        from serial.serialutil import SerialException
+    import readchar
 except ImportError:
-        print("Importing serial failed! Only file imports will be supported")
-        SERIAL_AVAILABLE = False
-try:
-        import readchar
-except ImportError:
-        print("Readchar not available")
-        READCHAR_AVAILABLE = False
+    print("Readchar not available")
+    READCHAR_AVAILABLE = False
 
-import sys
+CONVERT_CHARS = {'\x1b\x5b\x41': 'z', '\x1b\x5b\x42': 's', '\x1b\x5b\x44': 'q',
+                 '\x1b\x5b\x43': 'd'}
 
-
-CONVERT_CHARS = {'\x1b\x5b\x41':'z', '\x1b\x5b\x42':'s', '\x1b\x5b\x44':'q','\x1b\x5b\x43':'d'}
 
 class Hardware:
     def __init__(self, testfile=None, serial_port=None, output_file=None):
@@ -33,7 +31,7 @@ class Hardware:
         if SERIAL_AVAILABLE and serial_port is not None:
             try:
                 self.serial = Serial(serial_port, 9600, timeout=1)
-                 # Different thread for manual control
+                # Different thread for manual control
                 self.t = threading.Thread(target=self.send_messages)
                 self.t.start()
             except SerialException:
@@ -71,7 +69,7 @@ class Hardware:
         print("Reading input:")
         while self.read_input:
             key = readchar.readkey()
-            if key in ['\x03', '\x04']: # if control-c stop
+            if key in ['\x03', '\x04']:  # if control-c stop
                 print("Retuning control to the program")
                 self.read_input = False
                 break
@@ -85,9 +83,8 @@ class Hardware:
                     self.write(new_c)
 
 
-
 class SensorUpdate:
-    def __init__(self, line = None):
+    def __init__(self, line=None):
         if line is None:
             line = "L0F0R0t0"
         match = re.match('L(\d+)F(\d+)R(\d+)t(\d+)', line)
@@ -114,7 +111,7 @@ class SensorUpdate:
 
 
 class MotionUpdate:
-    def __init__(self, line = None):
+    def __init__(self, line=None):
         if line is None:
             line = "el0er0cor0t0"
         match = re.match('el(-?\d+)er(-?\d+)cor(-?\d+)t(\d+)', line)
@@ -127,6 +124,7 @@ class MotionUpdate:
     def __str__(self):
         return "MotionUpdate(Left: %d\tRight: %d\tTimedelta: %d)" \
             % (self.left, self.right, self.timedelta)
+
 
 def parse(line):
     if line.startswith('#'):

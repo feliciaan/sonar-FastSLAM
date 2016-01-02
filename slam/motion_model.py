@@ -11,12 +11,13 @@ FACTOR = 1 / (600 * 5)  # Empirically found
 
 GAUSSIAN_NOISE = False
 
-#   number of ms per 45 degrees depending on surface ...
+# Number of ms per 45 degrees depending on surface ...
 MS_PER_45_DEGREES = 200
-"""
-Calculates a possible new position, with added gaussian noise.
-"""
+
+
 def calculate_pose(old_pose, motion, timedelta):
+    """Calculates a possible new position, with added gaussian noise."""
+
     distance_left = motion.left * timedelta * FACTOR
     distance_right = motion.right * timedelta * FACTOR
 
@@ -24,12 +25,9 @@ def calculate_pose(old_pose, motion, timedelta):
         dx = distance_left * math.cos(old_pose.theta)
         dy = distance_left * math.sin(old_pose.theta)
         dtheta = 0
-
-
     elif distance_left == -distance_right:
         dx, dy = 0, 0
-        #dtheta = timedelta * math.pi / (2 * 250)
-        dtheta = timedelta * (math.pi / 4 ) / MS_PER_45_DEGREES
+        dtheta = timedelta * (math.pi / 4) / MS_PER_45_DEGREES
         if distance_left > distance_right:
             dtheta *= -1
     else:

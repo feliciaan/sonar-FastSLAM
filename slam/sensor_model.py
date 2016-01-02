@@ -53,9 +53,6 @@ def update_map(measurements, pose, map_):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
-        # print(sensor_pose.__str__() )
-        # print('measured_dist : ',measured_dist)
-
         cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
         for (cell, d) in cone:
             relative_dist = d / measured_dist
@@ -64,8 +61,6 @@ def update_map(measurements, pose, map_):
             elif measurement:
                 map_.add_to_cell(*cell, val=0.8472978603872034) #_log_odds(0.7)
 
-        # print("debugging first update_map")
-        # exit()
 
 def _measurement_per_angle(measurements):
     return [

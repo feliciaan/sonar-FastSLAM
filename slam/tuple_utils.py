@@ -2,11 +2,11 @@ __author__ = 'feliciaan'
 
 
 def tmin(t1, t2):
-    return min(t1[0],t2[0]), min(t1[1],t2[1])
+    return min(t1[0], t2[0]), min(t1[1], t2[1])
 
 
 def tmax(t1, t2):
-    return max(t1[0],t2[0]), max(t1[1],t2[1])
+    return max(t1[0], t2[0]), max(t1[1], t2[1])
 
 
 def tsub(t1, t2):

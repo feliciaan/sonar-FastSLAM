@@ -5,18 +5,22 @@ from tuple_utils import tmin, tsub, tmax, tadd
 
 """
 This map keeps track of the occupancies.
-To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap', which it instantiates as needed.
-Infinite going left and right is thus permited, without using to much memory.
-Indexing is done in a x/y fashion, where individual cells are 'cellsize'.
-(0,0) is the cell in the middle of the first grid
+
+To do this, it keeps track of one or more smaller 'SimpleOccupancyGridMap',
+which it instantiates as needed. Infinite going left and right is thus
+permited, without using to much memory. Indexing is done in a x/y fashion,
+where individual cells are 'cellsize'. (0,0) is the cell in the middle of the
+first grid.
 """
 
-PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)] for j in range(0, 300)])
+PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)]
+                               for j in range(0, 300)])
+
 
 class OccupancyGridMap:
     """
-    Blocksize in centimeters. Blocksize indicate how much is instantiated in one go, when out of bounds.
-    Cellsize in centimeters.
+    Blocksize in centimeters. Blocksize indicate how much is instantiated in
+    one go, when out of bounds. Cellsize in centimeters.
     Defaults: blocks of 1m, one cell is 5cm; 400 cells per block
     """
 
@@ -27,7 +31,7 @@ class OccupancyGridMap:
         assert blocksize % cellsize == 0, "blocksize should be a multiple of cellsize"
         self.blocksize = blocksize
         self.cellsize = cellsize
-        self.cells_per_block = self.blocksize/self.cellsize
+        self.cells_per_block = self.blocksize / self.cellsize
         self.minrange = (0, 0)  # (x,y)
         self.maxrange = (self.cells_per_block, self.cells_per_block)  # (x,y)
         self.grid = np.zeros(shape=self.maxrange)
@@ -38,9 +42,8 @@ class OccupancyGridMap:
         # poses corresponding to the path positions
         self.path_headings = None
 
-
         # also create negative blocks, so that we have 4 blocks
-        self.get_cell(-1,-1)
+        self.get_cell(-1, -1)
 
     def get_cell_size(self):
         return self.cellsize
@@ -96,7 +99,7 @@ class OccupancyGridMap:
     def gridcell_position(self, x, y):
         # pose
         # need to return x and y index of self.grid
-        x,y = self._get_cell(x, y)
+        x, y = self._get_cell(x, y)
         return int(x), int(y)
 
     def _increase_grid(self, out_of_bounds_pos):
@@ -127,9 +130,6 @@ class OccupancyGridMap:
 
         Returns the pareto-front of (distance, log_odds). None-values are ignored
         """
-        # TODO: plz implement me
-
-
 
         cells = self.get_cone(pose, cone_width_angle, max_radius)
 
@@ -154,7 +154,6 @@ class OccupancyGridMap:
 
     def get_cone(self, pose, cone_angle, radius):
         return self._cells_in_cone(pose.x, pose.y, radius, pose.theta, cone_angle / 2)
-
 
     def _cells_in_cone(self, x, y, view_distance, theta, view_angle):
         """
@@ -187,7 +186,6 @@ class OccupancyGridMap:
 
                 list.append(((xi, yi), d))
         return list
-
 
     # def get_cone(self, pose, cone_angle, radius):
     #     """
@@ -227,16 +225,12 @@ class OccupancyGridMap:
     #     for e in np.transpose(d):
     #         yield (indices[e[0], e[1]], s_dist[e[0], e[1]])
 
-
-
-
     def build_str(self):
         result = ""
 
         proc_grid = procentual_grid(self.grid)
 
-
-        robot_path_map= []
+        robot_path_map = []
         # Calculate the matrix with robot path
         length_i = len(proc_grid[::-1])
         for i, row in enumerate(proc_grid[::-1]):
@@ -252,13 +246,7 @@ class OccupancyGridMap:
             j = pose[1]
             length_i = len(robot_path_map)
             length_j = len(robot_path_map[i])
-            robot_path_map[length_i-i][j]= self.path_headings[index]
-
-
-
-        # for x in robot_path_map:
-        #     print (x)
-        # exit()
+            robot_path_map[length_i-i][j] = self.path_headings[index]
 
         length_i = len(proc_grid[::-1])
         for i, row in enumerate(proc_grid[::-1]):

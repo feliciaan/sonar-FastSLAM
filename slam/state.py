@@ -66,6 +66,7 @@ class Particle:
 
     def update_motion(self, motion, timedelta):
         self.pose = motion_model.calculate_pose(self.pose, motion, timedelta)
+        self.map.add_pose(self.pose)
 
     def update_sensor(self, update):
         self.weight = sensor_model.calc_weight(update, self.pose, self.map)

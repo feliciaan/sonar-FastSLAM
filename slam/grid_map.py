@@ -13,8 +13,7 @@ where individual cells are 'cellsize'. (0,0) is the cell in the middle of the
 first grid.
 """
 
-PRECALCULATED_GRID = np.array([[(i, j) for i in range(0, 300)]
-                               for j in range(0, 300)])
+MAX_SIZE = 300
 
 
 class OccupancyGridMap:
@@ -32,33 +31,26 @@ class OccupancyGridMap:
         self.blocksize = blocksize
         self.cellsize = cellsize
         self.cells_per_block = self.blocksize / self.cellsize
-        self.minrange = (0, 0)  # (x,y)
-        self.maxrange = (self.cells_per_block, self.cells_per_block)  # (x,y)
+        # The lowest x,y coordinates, divided by cellsize
+        self.minrange = 0, 0
+        # The highest x,y coordinate, divided by cellsize
+        self.maxrange = int(self.cells_per_block), int(self.cells_per_block)
         self.grid = np.zeros(shape=self.maxrange)
 
-        # save the robot path
-        # [ (x,y), (x,y), (x,y), ... ] (x,y) --> position in gridmap (indices)
-        self.path = None
-        # poses corresponding to the path positions
-        self.path_headings = None
+        # save the robot path by saving all the poses
+        # [ Pose @ time 0, Pose @ time 1, ... ]
+        self.path = []
+
+        # Precalculated x,y coordinate grid for use in get_cone
+        self.coordinate_grid = np.array([[(col * cellsize, row * cellsize)
+                                          for col in range(0, MAX_SIZE)]
+                                         for row in range(0, MAX_SIZE)])
 
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1, -1)
 
-    def get_cell_size(self):
-        return self.cellsize
-
-    def set_robot_path_headings(self, path_headings):
-        self.path_headings = path_headings
-
-    def set_robot_path(self, path):
-        self.path = path
-
-    def _debug(self):
-        print("Grid size:\t(%d,%d)\nMin Range:\t(%d,%d)\nMax Range:\t(%d,%d)" %
-              (self.grid.shape[0], self.grid.shape[1],
-               self.minrange[0], self.minrange[1],
-               self.maxrange[0], self.maxrange[1]))
+    def add_pose(self, pose):
+        self.path.append(pose)
 
     def get_cell(self, x, y):
         """
@@ -70,44 +62,54 @@ class OccupancyGridMap:
 
     def add_to_cell(self, x, y, val):
         row, col = self._get_cell(x, y)
-        self.grid[row, col] = val
+        self.grid[row, col] += val
+
+    def _ensure_coordinates_exist(self, coordinates):
+        """
+        Check if the x,y coordinates are in the bounds, otherwise increase grid
+        :param coordinates: numpy array with indices
+        :return: nothing, increases grid if necessary
+        """
+
+        if coordinates.size == 0:
+            return
+
+        xmin = coordinates[:, 0].min()  # TODO: optimize if necessary
+        xmax = coordinates[:, 0].max()
+        ymin = coordinates[:, 1].min()
+        ymax = coordinates[:, 1].max()
+
+        self._get_cell(xmin, ymin)
+        self._get_cell(xmax, ymax)
 
     def _get_cell(self, x, y):
         """
-        Gets the cell at x, y (in cm)
-        Might modify the array if needed, so don't ask things unless needed
+        Gets the (row, column) coordinates of the cell at x, y (in cm)
+        Might modify the array if needed, so don't ask things unless needed.
         """
-        # save orignal values
-        old_x, old_y = x, y
 
-        # get cell
-        x /= self.cellsize
-        y /= self.cellsize
+        row, col = self.cartesian2grid(x, y)
 
-        # get correct x and y cell values
-        x -= self.minrange[0]
-        y -= self.minrange[1]
+        # Check for out of bounds
+        if (row < 0 or col < 0
+                or row >= self.grid.shape[0] or col >= self.grid.shape[1]):
+            self._increase_grid((row, col))
+            # Recalculate with new grid
+            return self._get_cell(x, y)
 
-        # check out of bounds
-        if x < self.minrange[0] or y < self.minrange[1] or x > self.maxrange[0] or y > self.maxrange[1]:
-            self._increase_grid((x, y))
-            # x and y values are possibly changed (offset is different)
-            return self._get_cell(old_x, old_y)
-
-        return x, y
-
-    def gridcell_position(self, x, y):
-        # pose
-        # need to return x and y index of self.grid
-        x, y = self._get_cell(x, y)
-        return int(x), int(y)
+        return row, col
 
     def _increase_grid(self, out_of_bounds_pos):
-        # get index of block that needs to bed added or blocks to keep rectangular shape
-        signx = math.copysign(1, out_of_bounds_pos[0])
-        signy = math.copysign(1, out_of_bounds_pos[1])
-        new_pos = (signx * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[0]))/self.cells_per_block),
-                   signy * self.cells_per_block*math.ceil(abs((1 + out_of_bounds_pos[1]))/self.cells_per_block))
+        """
+        Extends the grid so the row,col coordinates in out_of_bounds_pos
+        fall within the grid.
+        """
+        # get index of block that needs to be added or blocks to keep rectangular shape
+        sign_row = math.copysign(1, out_of_bounds_pos[0])
+        sign_col = math.copysign(1, out_of_bounds_pos[1])
+        new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[0]) / self.cells_per_block)),
+                   int(sign_col * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[1]) / self.cells_per_block)))
+        new_pos = tadd(self.minrange, new_pos)
 
         current_size = self.grid.shape
         new_minrange = tmin(self.minrange, new_pos)
@@ -152,143 +154,98 @@ class OccupancyGridMap:
 
         return found
 
-    def get_cone(self, pose, cone_angle, radius):
-        return self._cells_in_cone(pose.x, pose.y, radius, pose.theta, cone_angle / 2)
+    def get_cone(self, pose, cone_angle, view_distance):
+        """
+        Gives cell coordinates in the specified cone.
 
-    def _cells_in_cone(self, x, y, view_distance, theta, view_angle):
+        Args:
+            pose: The coordinates of the apex and the angle of the cone
+            cone_angle: The angle (in radians) between the left and right edge
+                of the cone
+            view_distance: The radius of the cone
+
+        Example cone:
+            |       /
+            |     /
+            |   /
+            | /
+            +---------
+            pose.theta: 45°
+            cone_angle = 90° (45° left of theta and 45° right of theta)
+
+        Returns (cell-coordinates array, array of distances to (x,y))
         """
-        Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
-        Angle in radians; this value is the view to the left.
-        |       /
-        |     /
-        |   /
-        | /
-        +---------
-        Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
-        Return (cell, distance to x,y)
-        """
-        assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave " + str(view_angle)
+
+        x, y, theta = pose.x, pose.y, pose.theta
+        view_angle = cone_angle / 2
+        assert 0 <= view_angle <= math.pi, (
+            'A view angle of more then 180° is not permitted; '
+            'you gave %s rad.').format(view_angle)
+
+        # TODO: limit bounding box
         xmin = int(x - view_distance - self.cellsize)
         xmax = int(x + view_distance + self.cellsize)
         ymin = int(y - view_distance - self.cellsize)
         ymax = int(y + view_distance + self.cellsize)
-        list = []
+        rowmin, colmin = self.cartesian2grid(xmin, ymin)
+        rowmax, colmax = self.cartesian2grid(xmax, ymax)
 
-        for xi in range(xmin, xmax, self.cellsize):
-            for yi in range(ymin, ymax, self.cellsize):
-                d = distance(x, y, xi, yi)
-                if d > view_distance:
-                    continue
-                anglei = angle(xi, yi, x, y) - theta  # [-theta, 2*pi - theta]
-                # view_angle    : [0, pi]
-                if not ((-view_angle <= anglei <= view_angle) or (-view_angle <= anglei - 2 * math.pi <= view_angle)):
-                    continue
+        grid_size = rowmax - rowmin, colmax - colmin
+        coordinates = (self.coordinate_grid[:grid_size[1], :grid_size[0], :]
+                       + (xmin, ymin))
+        rel_coords = coordinates - (x, y)
 
-                list.append(((xi, yi), d))
-        return list
+        distances = np.sqrt(np.sum(rel_coords ** 2, axis=2))
+        within_view_distance = distances <= view_distance
 
-    # def get_cone(self, pose, cone_angle, radius):
-    #     """
-    #     Gives cell in the cone, where x,y is the position, theta is the look direction and angle is how much is visible left/right.
-    #     Angle in radians; this value is the view to the left.
-    #     |       /
-    #     |     /
-    #     |   /
-    #     | /
-    #     +---------
-    #     Theta: 45°; angle = 45° as we can see 45° left and 45° to the right, for a total of 90°
-    #     Return (cell, distance to x,y)
-    #     """
-    #     x, y, view_distance, theta, view_angle = pose.x, pose.y, radius, pose.theta, cone_angle / 2
-    #     assert view_angle <= math.pi, "A view angle of more then 180° is not permitted, you gave " + str(view_angle)
-    #     xmin = int(x - view_distance - self.cellsize)
-    #     xmax = int(x + view_distance + self.cellsize)
-    #     ymin = int(y - view_distance - self.cellsize)
-    #     ymax = int(y + view_distance + self.cellsize)
-    #
-    #     indices = PRECALCULATED_GRID[: (xmax - xmin)/self.cellsize, : (ymax - ymin)/self.cellsize, :] * self.cellsize + ymin
-    #
-    #     temp = indices - (x, y)
-    #     dist = np.sqrt(np.sum(temp ** 2, axis=2))
-    #     s_dist = dist.copy()
-    #     dist[dist < view_distance] = 1
-    #     dist[dist > view_distance] = 0
-    #
-    #     angle = (np.arctan2(temp[:, :, 0], temp[:, :, 1]) + np.pi) - theta
-    #     angle[~(((-view_angle <= angle) & (angle <= view_angle)) | ((-view_angle + 2 * np.pi < angle) &
-    #                                                                 (angle < view_angle + 2 * np.pi)))] = 0
-    #     angle[~(angle == 0.0)] = 1
-    #
-    #     comb = np.minimum(dist, angle)
-    #     d = np.where(comb == 1)
-    #
-    #     for e in np.transpose(d):
-    #         yield (indices[e[0], e[1]], s_dist[e[0], e[1]])
+        angles = np.arctan2(rel_coords[:, :, 1], rel_coords[:, :, 0])
+        rel_angles = (angles % (2 * np.pi)) - (theta % (2 * np.pi))
+        within_cone_angle = ((-view_angle <= rel_angles)
+                             & (rel_angles <= view_angle))
 
-    def build_str(self):
-        result = ""
+        within_cone = within_view_distance & within_cone_angle
 
-        proc_grid = procentual_grid(self.grid)
+        self._ensure_coordinates_exist(coordinates[within_cone])
 
-        robot_path_map = []
-        # Calculate the matrix with robot path
-        length_i = len(proc_grid[::-1])
-        for i, row in enumerate(proc_grid[::-1]):
-            length_j = len(row[::-1])
-            slice = []
-            for j, col in enumerate(row[::]):
-                slice.append('X')
-            robot_path_map.append(slice)
+        cell_coordinates = self.np_cartesian2grid(coordinates)
 
-        # Iterate over the matrix presentation and add the known robot path headings
-        for index, pose in enumerate(self.path):
-            i = pose[0]
-            j = pose[1]
-            length_i = len(robot_path_map)
-            length_j = len(robot_path_map[i])
-            robot_path_map[length_i-i][j] = self.path_headings[index]
+        return cell_coordinates[within_cone], distances[within_cone]
 
-        length_i = len(proc_grid[::-1])
-        for i, row in enumerate(proc_grid[::-1]):
-            length_j = len(row[::-1])
-            for j, col in enumerate(row[::]):
-                # Check if row,col is on the robot path
-                # optimize performance
-                # array --> matrix
-                heading = robot_path_map[i][j]
-                if heading is not 'X':
-                    result += heading
-                # if self.path is not None and (length_i-i, length_j-j) in self.path:
-                #     print ('yes')
-                #     result += '*'
-                else:
-                    result += str_cell(col)
-                # if (x, y) == (0, 0):
-                #        orig_repr = str_cell(procentual_grid(self.get_cell(0, 0)), chars="○◎◍◒◕●◙◌");
-                #        reprs[-1] = orig_repr + reprs[-1][1:]
-            result += "\n"
+    def cartesian2grid(self, x, y):
+        row = int(round(y / self.cellsize)) - self.minrange[0]
+        col = int(round(x / self.cellsize)) - self.minrange[1]
+        return row, col
 
-        return "GridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
-               (self.blocksize, self.cellsize, self.grid.shape, result)
+    def np_cartesian2grid(self, coordinates):
+        scaled = coordinates[:, :, ::-1] / self.cellsize
+        return np.rint(scaled).astype(np.int) - self.minrange
+
+    def grid2cartesian(self, row, col):
+        x = (col + self.minrange[1]) * self.cellsize
+        y = (row + self.minrange[0]) * self.cellsize
+        return x, y
 
     def __str__(self):
-        return self.build_str()
+        proc_grid = procentual_grid(self.grid)
+        str_grid = np.vectorize(str_cell)(proc_grid)
 
+        # add all poses to map
+        for pose in self.path:
+            row, col = self._get_cell(pose.x, pose.y)
+            str_grid[row, col] = pose.dir_str()
 
-def distance(x0, y0, x1, y1):
-    return math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
+        # add start to map
+        str_grid[self._get_cell(0, 0)] = 'X'
 
+        return '\n'.join(''.join(row) for row in str_grid[::-1])
 
-def angle(x0, y0, x1, y1):
-    """
-    Returns the angle between the two coordinates, expressed in [0,2*pi]
-    """
-    dx = x0 - x1
-    dy = y0 - y1
-    return (2 * math.pi + math.atan2(dy, dx)) % (2 * math.pi)
+    def __repr__(self):
+        return "OccupancyGridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
+               (self.blocksize, self.cellsize, self.grid.shape, self)
 
 
 def procentual_grid(grid):
+    """Converts a log odds grid to a percentual grid."""
     return 1 - 1 / (1 + np.exp(np.minimum(500, grid)))
 
 

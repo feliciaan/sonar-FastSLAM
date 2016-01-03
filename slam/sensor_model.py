@@ -53,13 +53,17 @@ def update_map(measurements, pose, map_):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
-        cone = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
-        for (cell, d) in cone:
-            relative_dist = d / measured_dist
-            if relative_dist < 0.8:
-                map_.add_to_cell(*cell, val=-0.8472978603872036) # _log_odds(0.3)
-            elif measurement:
-                map_.add_to_cell(*cell, val=0.8472978603872034) #_log_odds(0.7)
+        cell_coordinates, distances = map_.get_cone(sensor_pose, CONE_ANGLE,
+                                                    measured_dist)
+
+        cutoff = measured_dist * 0.8
+        empty_coords = cell_coordinates[distances < cutoff]
+        non_empty_coords = cell_coordinates[distances > cutoff]
+
+        map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
+        if measurement and len(non_empty_coords) > 0:
+            non_empty_log_odds = _log_odds(.5 + (.5 / (len(non_empty_coords) + 1)))
+            map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
 
 
 def _measurement_per_angle(measurements):

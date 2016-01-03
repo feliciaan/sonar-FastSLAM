@@ -54,18 +54,16 @@ def update_map(measurements, pose, map_):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
-        indices, dist = map_.get_cone(sensor_pose, CONE_ANGLE, measured_dist)
-
-        # modify to grid indices
-        indices = np.rint(indices / map_.cellsize - map_.minrange).astype(np.int)
+        cell_coordinates, distances = map_.get_cone(sensor_pose, CONE_ANGLE,
+                                                    measured_dist)
 
         cutoff = measured_dist * 0.8
-        empty_indices = indices[dist < cutoff]
+        empty_coordinates = cell_coordinates[distances < cutoff]
+        non_empty_coordinates = cell_coordinates[distances > cutoff]
 
-        map_.grid[empty_indices[:, 0], empty_indices[:, 1]] += -0.8472978603872026  # _log_odds(0.3) - 10^-14 #...36
+        map_.grid[empty_coordinates[:, 0], empty_coordinates[:, 1]] += -0.8472978603872026  # _log_odds(0.3) - 10^-14 #...36
         if measurement:
-            non_empty_indices = indices[dist >= cutoff]
-            map_.grid[non_empty_indices[:, 0], non_empty_indices[:, 1]] += 0.8472978603872034  # _log_odds(0.7)
+            map_.grid[non_empty_coordinates[:, 0], non_empty_coordinates[:, 1]] += 0.8472978603872034  # _log_odds(0.7)
 
 
 def _measurement_per_angle(measurements):

@@ -191,7 +191,7 @@ class OccupancyGridMap:
         rowmax, colmax = self.cartesian2grid(xmax, ymax)
 
         grid_size = rowmax - rowmin, colmax - colmin
-        coordinates = (self.coordinate_grid[:grid_size[0], :grid_size[1], :]
+        coordinates = (self.coordinate_grid[:grid_size[1], :grid_size[0], :]
                        + (xmin, ymin))
         rel_coords = coordinates - (x, y)
 
@@ -199,7 +199,7 @@ class OccupancyGridMap:
         within_view_distance = distances <= view_distance
 
         angles = np.arctan2(rel_coords[:, :, 1], rel_coords[:, :, 0])
-        rel_angles = angles + np.pi - (theta % (2 * np.pi))
+        rel_angles = (angles % (2 * np.pi)) - (theta % (2 * np.pi))
         within_cone_angle = ((-view_angle <= rel_angles)
                              & (rel_angles <= view_angle))
 
@@ -207,12 +207,18 @@ class OccupancyGridMap:
 
         self._ensure_coordinates_exist(coordinates[within_cone])
 
-        return coordinates[within_cone], distances[within_cone]
+        cell_coordinates = self.np_cartesian2grid(coordinates)
+
+        return cell_coordinates[within_cone], distances[within_cone]
 
     def cartesian2grid(self, x, y):
-        row = y / self.cellsize - self.minrange[0]
-        col = x / self.cellsize - self.minrange[1]
+        row = int(round(y / self.cellsize)) - self.minrange[0]
+        col = int(round(x / self.cellsize)) - self.minrange[1]
         return row, col
+
+    def np_cartesian2grid(self, coordinates):
+        scaled = coordinates[:, :, ::-1] / self.cellsize
+        return np.rint(scaled).astype(np.int) - self.minrange
 
     def grid2cartesian(self, row, col):
         x = (col + self.minrange[1]) * self.cellsize

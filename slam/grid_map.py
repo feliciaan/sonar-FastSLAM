@@ -14,8 +14,6 @@ first grid.
 """
 
 MAX_SIZE = 300
-COORDINATE_GRID = np.array([[(i, j) for j in range(0, MAX_SIZE)]
-                            for i in range(0, MAX_SIZE)])
 
 
 class OccupancyGridMap:
@@ -42,6 +40,11 @@ class OccupancyGridMap:
         # save the robot path by saving all the poses
         # [ Pose @ time 0, Pose @ time 1, ... ]
         self.path = []
+
+        # Precalculated x,y coordinate grid for use in get_cone
+        self.coordinate_grid = np.array([[(col * cellsize, row * cellsize)
+                                          for col in range(0, MAX_SIZE)]
+                                         for row in range(0, MAX_SIZE)])
 
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1, -1)
@@ -106,6 +109,7 @@ class OccupancyGridMap:
         sign_col = math.copysign(1, out_of_bounds_pos[1])
         new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[0]) / self.cells_per_block)),
                    int(sign_col * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[1]) / self.cells_per_block)))
+        new_pos = tadd(self.minrange, new_pos)
 
         current_size = self.grid.shape
         new_minrange = tmin(self.minrange, new_pos)
@@ -187,8 +191,8 @@ class OccupancyGridMap:
         rowmax, colmax = self.cartesian2grid(xmax, ymax)
 
         grid_size = rowmax - rowmin, colmax - colmin
-        coordinates = (COORDINATE_GRID[:grid_size[0], :grid_size[1], :]
-                       * self.cellsize + (xmin, ymin))
+        coordinates = (self.coordinate_grid[:grid_size[0], :grid_size[1], :]
+                       + (xmin, ymin))
         rel_coords = coordinates - (x, y)
 
         distances = np.sqrt(np.sum(rel_coords ** 2, axis=2))
@@ -206,13 +210,13 @@ class OccupancyGridMap:
         return coordinates[within_cone], distances[within_cone]
 
     def cartesian2grid(self, x, y):
-        row = y / self.cellsize - self.minrange[1]
-        col = x / self.cellsize - self.minrange[0]
+        row = y / self.cellsize - self.minrange[0]
+        col = x / self.cellsize - self.minrange[1]
         return row, col
 
     def grid2cartesian(self, row, col):
-        x = (col + self.minrange[0]) * self.cellsize
-        y = (row + self.minrange[1]) * self.cellsize
+        x = (col + self.minrange[1]) * self.cellsize
+        y = (row + self.minrange[0]) * self.cellsize
         return x, y
 
     def __str__(self):

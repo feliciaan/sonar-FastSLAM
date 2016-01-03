@@ -2,7 +2,7 @@ import math
 
 
 class Pose:
-    CHARS = "↑↗→↘↓↙←↖"
+    CHARS = "→↙↓↘↗←↑↖"
 
     def __init__(self, x, y, theta):
         self.x = x

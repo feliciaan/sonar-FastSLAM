@@ -1,5 +1,4 @@
 import math
-import numpy as np
 from pose import Pose
 
 MAX_RANGE = 100  # In cm
@@ -58,12 +57,13 @@ def update_map(measurements, pose, map_):
                                                     measured_dist)
 
         cutoff = measured_dist * 0.8
-        empty_coordinates = cell_coordinates[distances < cutoff]
-        non_empty_coordinates = cell_coordinates[distances > cutoff]
+        empty_coords = cell_coordinates[distances < cutoff]
+        non_empty_coords = cell_coordinates[distances > cutoff]
 
-        map_.grid[empty_coordinates[:, 0], empty_coordinates[:, 1]] += -0.8472978603872026  # _log_odds(0.3) - 10^-14 #...36
-        if measurement:
-            map_.grid[non_empty_coordinates[:, 0], non_empty_coordinates[:, 1]] += 0.8472978603872034  # _log_odds(0.7)
+        map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
+        if measurement and len(non_empty_coords) > 0:
+            non_empty_log_odds = _log_odds(.5 + (.5 / (len(non_empty_coords) + 1)))
+            map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
 
 
 def _measurement_per_angle(measurements):

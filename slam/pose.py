@@ -2,7 +2,7 @@ import math
 
 
 class Pose:
-    CHARS = "→↙↓↘↗←↑↖"
+    CHARS = "→↗↑↖←↙↓↘"
 
     def __init__(self, x, y, theta):
         self.x = x
@@ -14,7 +14,7 @@ class Pose:
         if degrees > 180:
             degrees -= 360
 
-        template = "Pose: x:{.0f}cm, y:{.0f}cm, θ:{.2f}rad={}°"
+         template = "Pose: x:{}cm, y:{}cm, θ:{}, rad={}°"
         return template.format(self.x, self.y, self.theta, degrees)
 
     def dir_str(self):

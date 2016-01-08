@@ -28,9 +28,10 @@ def calculate_pose(old_pose, motion, timedelta):
     elif distance_left == -distance_right:
         dx, dy = 0, 0
         dtheta = timedelta * (math.pi / 4) / MS_PER_45_DEGREES
-        if distance_left > distance_right:
+        if distance_left < distance_right:
             dtheta *= -1
     else:
+        assert (True), " |distance_left|  !=  |distance_right|"
         turning_angle = (distance_left - distance_right) / WHEEL_DISTANCE_IN_CM
         polar_length = (distance_left + distance_right) / (2 * turning_angle)
 

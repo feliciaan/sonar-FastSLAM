@@ -6,6 +6,8 @@ from motion_model import calculate_pose
 from state import State
 from settings import DEBUG
 import math
+from grid_world import *
+
 
 INF = 500
 
@@ -16,6 +18,10 @@ old_pose = Pose(0, 0, 0)
 
 ogm = None
 print_next = False
+
+
+gw = GridWorld()
+
 
 for update in hw.updates():
     start_time = time.time()
@@ -37,6 +43,11 @@ for update in hw.updates():
         # input number + ms + degrees
 
         with open("out.txt", "a") as myfile:
+            # draw a world
+            gw.update_gridworld(ogm.__str__())
+
+
+            input("Enter to continue")
             myfile.write(pose.__str__() + '\n')
 
             myfile.write(ogm.__str__() + '\n')

@@ -57,6 +57,9 @@ class State:
         for particle in self.particles:
             particle.weight /= total_weight
 
+    def best_particle(self):
+        return max(self.particles, key=lambda particle: particle.weight)
+
 
 class Particle:
     def __init__(self, n_particles, cellsize, blocksize):

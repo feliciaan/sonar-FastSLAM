@@ -107,8 +107,8 @@ class OccupancyGridMap:
         # get index of block that needs to be added or blocks to keep rectangular shape
         sign_row = math.copysign(1, out_of_bounds_pos[0])
         sign_col = math.copysign(1, out_of_bounds_pos[1])
-        new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[0]) / self.cells_per_block)),
-                   int(sign_col * self.cells_per_block * math.ceil(abs(1 + out_of_bounds_pos[1]) / self.cells_per_block)))
+        new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(sign_row + out_of_bounds_pos[0]) / self.cells_per_block)),
+                   int(sign_col * self.cells_per_block * math.ceil(abs(sign_col + out_of_bounds_pos[1]) / self.cells_per_block)))
         new_pos = tadd(self.minrange, new_pos)
 
         current_size = self.grid.shape

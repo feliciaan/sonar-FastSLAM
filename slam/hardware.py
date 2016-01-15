@@ -42,7 +42,9 @@ class Hardware:
         for line in data_iterator:
             line = line.strip()
             if line:
-                yield parse(line)
+                line = parse(line)
+                if line:
+                    yield line
         if self.t:
             self.read_input = False
 
@@ -134,4 +136,5 @@ def parse(line):
     elif line.startswith('el'):
         return MotionUpdate(line)
     else:
+        print("Line (%s) isn't in the correct format." % line)
         return None

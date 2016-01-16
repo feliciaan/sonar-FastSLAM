@@ -199,10 +199,8 @@ class OccupancyGridMap:
         return x, y
 
     def in_grid(self,grid_index): #uses row+columns 
-        if (grid_index[0]<self.minrange[0] or grid_index[0]>=self.maxrange[0] or grid_index[1]<self.minrange[1] or grid_index[1]>=self.maxrange[1]):
-            return False
-        else:
-            return True
+        return not(grid_index[0]<self.minrange[0] or grid_index[0]>=self.maxrange[0] or grid_index[1]<self.minrange[1] or grid_index[1]>=self.maxrange[1])
+            
 
     def __str__(self):
         proc_grid = procentual_grid(self.grid)

@@ -28,10 +28,9 @@ def calc_weight(measurements, pose, map_):
             else:
                 measured_dist = MAX_RANGE
         """     
+        
         """likelihoods filed range finder, p172"""
-
         if measured_dist is not None and measured_dist < MAX_RANGE:#discard max range readings
-            #print("likelihoods fields") 
             #coordinates of endpoint measured distance
             x_co=sensor_pose.x+measured_dist*math.cos(sensor_pose.theta)
             y_co=sensor_pose.y+measured_dist*math.sin(sensor_pose.theta)
@@ -40,23 +39,15 @@ def calc_weight(measurements, pose, map_):
             measured_cell_occupancy=check_for_unknown(map_,(x_co,y_co))
                            
             if measured_cell_occupancy=="unknown":
-                #print("unknown cell")
                 probability*=1/MAX_RANGE
-                #print("unknown")
-                #print("minrange=",map_.minrange, "and maxrange=",map_.maxrange)
-                
-            #measured distance fall into known category--> check occupied/free + find nearest occupied along line    
+                                
+            #find nearest neighbour that is occupied    
             elif measured_cell_occupancy=="known":   
-                #print ("known cell") 
                 nearest_object = find_nearest_neighbor(map_, (x_co,y_co))
-                print("nearest object=",nearest_object)
                 if nearest_object is not None:
-                    print("found neighbour")
-                                       
-                     #calculate Euclidean distance
+                     #calculate Euclidean distance between measured coord and closest occupied coord
                     sub=tsub((x_co,y_co),nearest_object)
                     expected_distance=math.hypot(sub[0],sub[1])
-                    print("expected distance=",expected_distance)
                     probability*=_prob_of_distances(expected_distance,0.0)
        
             #distance_to_closest_object_in_cone(map_,sensor_pose, CONE_ANGLE, MAX_RANGE)
@@ -73,10 +64,6 @@ def calc_weight(measurements, pose, map_):
         
             probability *= _prob_of_distances(measured_dist, expected_distance)
         """
-    #if probability !=1:
-     #   print(probability)    
-    #print ('probability')
-    #print(probability)
     return probability
 
 
@@ -84,30 +71,27 @@ def calc_weight(measurements, pose, map_):
       
 #if measured_distance fall into unknown category, cell get different probability, no need to
 #find nearest occupied cell      
-
 def check_for_unknown(map,position):
     grid_index=map.cartesian2grid(position[0],position[1])  
     if (not map.in_grid(grid_index)):
         return "unknown"
     cell=map.get_cell(position[0],position[1])
-    if cell>0.4 and cell<0.6:
+    if cell==0.5:
         return "unknown"
     else:
         return "known"
  
 def find_nearest_neighbor(map,position): 
-    print("search for neighbour") 
     #find nearest occupied cell
-    #coord not in grid
-    
     cell=map.get_cell(position[0],position[1])
-    if cell>=0.6:
+    #measured cell is occupied
+    if cell==0.5:
         return position
     else:
         grid_index=map.cartesian2grid(position[0],position[1])
         distance=1
-        
-           
+        #check in radius around current position, using (row,column) positions in grid 
+        #if counter is 0, no occupied positions inside the grid have been found, return None  
         counter=-1
         while counter!=0:
             counter=0
@@ -115,24 +99,18 @@ def find_nearest_neighbor(map,position):
                 for a in (-1,1):
                     for b in (-1,1):
                         pos=(grid_index[0]+a*distance,grid_index[1]+b*i)
-                        #print("new position=",pos)    
                         if(map.in_grid(pos)):
-                            #print("value cell=",map.grid[pos[0],pos[1]])
                             if map.grid[pos[0],pos[1]]>0.6:
                                 counter+=1
                                 return map.grid2cartesian(pos[0],pos[1])
                                 
                         pos=(grid_index[0]+a*i,grid_index[1]+b*distance)
-                        #print("new position=",pos)  
                         if(map.in_grid(pos)):
-                            #print("value cell=",map.grid[pos[0],pos[1]])
                             if map.grid[pos[0],pos[1]]>0.6:
                                 counter+=1
                                 return map.grid2cartesian(pos[0],pos[1]) 
                          
             distance+=1
-            print("counter=",counter)
-            print("distance=",distance)
         return None 
                   
                 

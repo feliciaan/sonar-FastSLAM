@@ -59,6 +59,7 @@ class OccupancyGridMap:
         """
         row, col = self._get_cell(x, y)
         return self.grid[row, col]
+    
 
     def add_to_cell(self, x, y, val):
         row, col = self._get_cell(x, y)
@@ -125,35 +126,7 @@ class OccupancyGridMap:
         self.minrange = new_minrange
         self.maxrange = new_maxrange
 
-    def distance_to_closest_object_in_cone(self, pose, cone_width_angle, max_radius):
-        """
-        Raytraces until a first object is found. Does not search further then max_radius.
-        Keep max_radius quite small (e.g. 130cm or 200cm), as it will get slow otherwise.
-
-        Returns the pareto-front of (distance, log_odds). None-values are ignored
-        """
-
-        cells = self.get_cone(pose, cone_width_angle, max_radius)
-
-        def snd(tupl):
-            (x, y) = tupl
-            return y
-
-        cells = list(cells)
-        cells.sort(key=snd)
-
-        found = []
-        curr_max = -1
-        for (cell, d) in cells:
-            cell = self.get_cell(*cell)
-            if cell == 0.5:
-                continue
-            if cell > curr_max:
-                curr_max = cell
-                found.append((d, cell))
-
-        return found
-
+    
     def get_cone(self, pose, cone_angle, view_distance):
         """
         Gives cell coordinates in the specified cone.
@@ -225,6 +198,12 @@ class OccupancyGridMap:
         y = (row + self.minrange[0]) * self.cellsize
         return x, y
 
+    def in_grid(self,grid_index): #uses row+columns 
+        if (grid_index[0]<self.minrange[0] or grid_index[0]>=self.maxrange[0] or grid_index[1]<self.minrange[1] or grid_index[1]>=self.maxrange[1]):
+            return False
+        else:
+            return True
+
     def __str__(self):
         proc_grid = procentual_grid(self.grid)
         str_grid = np.vectorize(str_cell)(proc_grid)
@@ -244,11 +223,14 @@ class OccupancyGridMap:
                (self.blocksize, self.cellsize, self.grid.shape, self)
 
 
+        
 def procentual_grid(grid):
     """Converts a log odds grid to a percentual grid."""
     return 1 - 1 / (1 + np.exp(np.minimum(500, grid)))
 
 
+    
+    
 def str_cell(cell, chars=" ▁▂▃▄▅▆▇█░"):
     if cell == 0.5:  # 0.5 == unsure about cell
         return chars[-1]

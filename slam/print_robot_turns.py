@@ -8,12 +8,14 @@ from settings import DEBUG
 import math
 from grid_world import *
 import pickle
+import codecs
+
+
 
 INF = 500
 
 hw = Hardware("../test/testdata-film-feli01.txt")
 state = State(n_particles=1, cellsize=5, blocksize=100)
-
 old_pose = Pose(0, 0, 0)
 
 ogm = None
@@ -39,7 +41,7 @@ for update in hw.updates():
         # input number + ms + degrees
 
         pickle.dump(ogm.__str__(), open("gridworld.pkl", "wb"))
-        with open("out.txt", "a") as myfile:
+        with codecs.open("out.txt", "a", "utf-8") as myfile:
             # draw a world
             # gw.update_gridworld(ogm.__str__())
 
@@ -58,5 +60,5 @@ stop_time = time.time()
 # ogm.set_robot_path(robot_poses)
 
 print("elapsed time : ", (stop_time - start_time) * 1000)
-with open("out.txt", "a") as myfile:
+with codecs.open("out.txt", "a", "utf-8") as myfile:
     myfile.write(ogm.__str__())

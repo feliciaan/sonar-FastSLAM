@@ -22,7 +22,7 @@ class GridWorld():
     def update_gridworld(self):
 
         try:
-            ogm = pickle.load( open( "gridworld.pkl", "rb" ) )
+            ogm = pickle.load( open( "gridworld.pkl", "rb") )
 
             length = ogm.find('\n')
             width = (length+1)*BLOCK

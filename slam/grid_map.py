@@ -42,9 +42,9 @@ class OccupancyGridMap:
         self.path = []
 
         # Precalculated x,y coordinate grid for use in get_cone
-        self.coordinate_grid = np.array([[(col * cellsize, row * cellsize)
-                                          for col in range(0, MAX_SIZE)]
-                                         for row in range(0, MAX_SIZE)])
+        self.coordinate_grid = np.array([[(row * cellsize, col * cellsize)
+                                          for row in range(0, MAX_SIZE)]
+                                         for col in range(0, MAX_SIZE)])
 
         # also create negative blocks, so that we have 4 blocks
         self.get_cell(-1, -1)
@@ -199,8 +199,7 @@ class OccupancyGridMap:
         return x, y
 
     def in_grid(self,grid_index): #uses row+columns 
-        return not(grid_index[0]<self.minrange[0] or grid_index[0]>=self.maxrange[0] or grid_index[1]<self.minrange[1] or grid_index[1]>=self.maxrange[1])
-            
+        return not (grid_index[0] < 0 or grid_index[1] < 0 or grid_index[0] >= self.grid.shape[0] or grid_index[1] >= self.grid.shape[1])   
 
     def __str__(self):
         proc_grid = procentual_grid(self.grid)

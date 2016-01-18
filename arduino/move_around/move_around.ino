@@ -439,10 +439,10 @@ void loop() {
     case 'a': auto_move(left, front, right);  break;
     case 'z': forward();                      break;
     case 's': backward();                     break;
-    case 'd': timed_turn(LEFT, ANGLE_10DEG);  break;
-    case 'D': timed_turn(LEFT, ANGLE_45DEG);  break;
-    case 'q': timed_turn(RIGHT, ANGLE_10DEG); break;
-    case 'Q': timed_turn(RIGHT, ANGLE_45DEG); break;
+    case 'D': timed_turn(LEFT, ANGLE_10DEG);  break;
+    case 'd': timed_turn(LEFT, ANGLE_45DEG);  break;
+    case 'Q': timed_turn(RIGHT, ANGLE_10DEG); break;
+    case 'q': timed_turn(RIGHT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
     case 'S':

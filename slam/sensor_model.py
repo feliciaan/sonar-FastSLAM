@@ -134,7 +134,7 @@ def _prob_of_distances(measured, expected):
 
 def _normal_distribution(x, mean, stddev):
     den=(math.sqrt(2*math.pi)*stddev)
-    return math.exp((-1*((x-mean)**2))/(2*(stddev**2))) 
+    return 1/den* math.exp((-1*((x-mean)**2))/(2*(stddev**2))) 
     
 
 

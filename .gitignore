@@ -90,3 +90,8 @@ target/
 *.dSYM/
 
 .DS_Store
+
+*.pkl
+
+/.project
+/.pydevproject

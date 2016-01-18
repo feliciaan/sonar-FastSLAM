@@ -90,3 +90,5 @@ target/
 *.dSYM/
 
 .DS_Store
+
+*.pkl

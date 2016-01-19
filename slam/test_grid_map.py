@@ -7,7 +7,7 @@ import pickle
 from hardware import Hardware
 from state import State
 
-hardware = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file="../test/testdata-film03.txt")
+hardware = Hardware("../test/testdata-film03.txt")
 state = State(n_particles=10, cellsize=5, blocksize=100)
 
 sumdeltas = 0

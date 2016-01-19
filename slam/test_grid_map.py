@@ -10,6 +10,7 @@ from state import State
 hardware = Hardware("../test/testdata-film03.txt")
 state = State(n_particles=10, cellsize=5, blocksize=100)
 
+
 sumdeltas = 0
 
 start = time.time()
@@ -32,6 +33,7 @@ for update in hardware.updates():
         with open("gridworld.pkl", "wb") as f:
             best_particle = state.best_particle()
             pickle.dump(str(best_particle.map), f)
+
 print(sumdeltas)
 stop = time.time()
 print("elapsed time : ", (stop - start) * 1000)

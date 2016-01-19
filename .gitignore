@@ -92,3 +92,6 @@ target/
 .DS_Store
 
 *.pkl
+
+/.project
+/.pydevproject

@@ -9,8 +9,8 @@ from state import State
 
 
 
-hardware = Hardware("../test/testdata-film03.txt")
-state = State(n_particles=150, cellsize=5, blocksize=100)
+hardware = Hardware("../test/testdata-film-feli01.txt")
+state = State(n_particles=1, cellsize=5, blocksize=100)
 
 
 

@@ -65,8 +65,8 @@ def find_nearest_neighbor(map,position):
         return "unknown" 
     
     cell=map.get_cell(position[0],position[1])
-    #if proc_value_cell(cell)==0.5: 
-     #   return "unknown"
+    if proc_value_cell(cell)==0.5: 
+        return "unknown"
     
     #measured cell is occupied
     if proc_value_cell(cell)==1: 

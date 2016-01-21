@@ -3,11 +3,11 @@ import math
 from pose import Pose
 
 
-STD_DEV = .2
-THETA_STD_DEV = .05
+STD_DEV = 1
+THETA_STD_DEV = .1
 WHEEL_DISTANCE_IN_CM = 8.4
 # FACTOR = 1 / (600 * 50)  # Empirically found
-FACTOR = 1 / (600 * 5)  # Empirically found
+FACTOR = 1 / (600 * 6)  # Empirically found
 
 GAUSSIAN_NOISE = True
 
@@ -28,9 +28,12 @@ def calculate_pose(old_pose, motion, timedelta):
     elif distance_left == -distance_right:
         dx, dy = 0, 0
         #dtheta = timedelta * (math.pi / 4) / MS_PER_45_DEGREES
-        dtheta=abs(distance_left)/(WHEEL_DISTANCE_IN_CM/2) #use formula for arc to calculate theta
-        if distance_left < distance_right:
-            dtheta *= -1
+        #dtheta=abs(distance_left)/(WHEEL_DISTANCE_IN_CM/2) #use formula for arc to calculate theta
+        #if distance_left < distance_right:
+        print("old theta=",old_pose.theta)
+        print("distance left=",distance_left, " en distance_right=",distance_right)
+        dtheta=distance_left/(WHEEL_DISTANCE_IN_CM/2)
+        print("new dtheta=",dtheta)
     else: #this never happens right??? 
         assert (True), " |distance_left|  !=  |distance_right|"
         turning_angle = (distance_left - distance_right) / WHEEL_DISTANCE_IN_CM

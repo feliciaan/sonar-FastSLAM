@@ -5,7 +5,7 @@ import pickle
 REFRESH = 1000
 
 # BLOCK size
-BLOCK = 8
+BLOCK = 4
 
 
 class GridWorld():
@@ -13,8 +13,8 @@ class GridWorld():
         self.master = Tk()
 
         self.w = Canvas(self.master, width=600, height=600)
-        self.width = 600
-        self.height = 600
+        self.width = 1200
+        self.height = 1200
         self.w.pack()
 
 
@@ -77,7 +77,7 @@ class GridWorld():
             cntr = 0
             for c in ogm:
                 cntr += 1
-                if cntr == 10000:
+                if cntr == 100000:
                     break
                 if c == '\n':
                     # New grid row

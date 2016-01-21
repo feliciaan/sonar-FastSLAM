@@ -3,18 +3,20 @@ from pose import Pose
 from tuple_utils import  tsub
 from grid_map import procentual_grid
 
-MAX_RANGE = 100  # In cm
+MAX_RANGE = 150  # In cm
 CONE_ANGLE = 0.872664626  # In radians
-PROBABILITY_FREE = 0.0001
-RECOGNITION_SENSITIVITY = 5  # In cm
+PROBABILITY_FREE = 0.00001
+RECOGNITION_SENSITIVITY = 5 # In cm
 
 
 def calc_weight(measurements, pose, map_):
     probability = 1
+    #return probability
         
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
+        
         # TODO: what if no expected distance is known? Fixed -> weight
                
         """likelihoods fields range finder, p172"""
@@ -23,8 +25,7 @@ def calc_weight(measurements, pose, map_):
             #coordinates of endpoint measured distance
             x_co=sensor_pose.x+measured_dist*math.cos(sensor_pose.theta)
             y_co=sensor_pose.y+measured_dist*math.sin(sensor_pose.theta)
-            
-            
+           
             nearest_object = find_nearest_neighbor(map_, (x_co,y_co))
             #when sensor measurement falls into unknown category, prob is assumed constant p173               
             if nearest_object=="unknown":
@@ -37,7 +38,8 @@ def calc_weight(measurements, pose, map_):
                 distance=math.hypot(sub[0],sub[1])
                 prob=_prob_of_distances(distance,0.0)
                 probability*=prob
-    print(probability)   
+    
+     
     return probability
 
 
@@ -63,8 +65,8 @@ def find_nearest_neighbor(map,position):
         return "unknown" 
     
     cell=map.get_cell(position[0],position[1])
-    if proc_value_cell(cell)==0.5: 
-        return "unknown"
+    #if proc_value_cell(cell)==0.5: 
+     #   return "unknown"
     
     #measured cell is occupied
     if proc_value_cell(cell)==1: 
@@ -107,10 +109,10 @@ def distance_to_closest_object_in_cone(map, pose, cone_width_angle, max_radius):
 
         cells = map.get_cone(pose, cone_width_angle, max_radius)
         map.grid=procentual_grid(map.grid)
-        """def snd(tupl):
+        def snd(tupl):
             (x, y) = tupl
             return y
-"""
+
         cells = list(cells)
         cells.sort(key=snd)
 
@@ -134,7 +136,7 @@ def _prob_of_distances(measured, expected):
 
 def _normal_distribution(x, mean, stddev):
     den=(math.sqrt(2*math.pi)*stddev)
-    return 1/den* math.exp((-1*((x-mean)**2))/(2*(stddev**2))) 
+    return  1/den*math.exp((-1*((x-mean)**2))/(2*(stddev**2)))
     
 
 

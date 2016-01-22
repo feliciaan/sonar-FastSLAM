@@ -48,16 +48,14 @@ class State:
         i = 0
         for m in range(self.n_particles):
             u = r + m / self.n_particles
-            #print("m=",m)
+            
             while u > c:
                 i += 1
-                #print("m=",m)
-                #print("i=",i," en list lengte=",self.n_particles)
-                #print("u=",u, " en c=",c)
+                
                 c += self.particles[i].weight
             new_particles.append(self.particles[i])
         
-       
+       #TODO add random particles to see if it improves results
      
 
     def _normalize_particle_weights(self):

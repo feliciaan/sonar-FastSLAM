@@ -77,7 +77,7 @@ class GridWorld():
             cntr = 0
             for c in ogm:
                 cntr += 1
-                if cntr == 100000:
+                if cntr == 1000000:
                     break
                 if c == '\n':
                     # New grid row

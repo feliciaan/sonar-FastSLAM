@@ -19,6 +19,9 @@ class Pose:
 
     def dir_str(self):
         # as a float, 0..1, where 0 and 1 are 360°, 0.5 = 180°
+        #print("theta")
+        #print(self.theta)
         theta = (self.theta + 2*math.pi) / (2*math.pi)
         theta = ((theta + 1/16) * 8) % 8
+        #print(theta)
         return self.CHARS[int(theta)]

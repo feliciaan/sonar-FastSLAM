@@ -15,7 +15,13 @@ first grid.
 
 MAX_SIZE = 300
 
-
+BLOCKSIZE = 100
+CELLSIZE = 5
+CELLS_PER_BLOCK = BLOCKSIZE / CELLSIZE
+# Precalculated x,y coordinate grid for use in get_cone
+COORDINATE_GRID = np.array([[(row * CELLSIZE, col * CELLSIZE)
+                                  for row in range(0, MAX_SIZE)]
+                                 for col in range(0, MAX_SIZE)])
 class OccupancyGridMap:
     """
     Blocksize in centimeters. Blocksize indicate how much is instantiated in
@@ -23,31 +29,27 @@ class OccupancyGridMap:
     Defaults: blocks of 1m, one cell is 5cm; 400 cells per block
     """
 
-    def __init__(self, blocksize=100, cellsize=5):
+    def __init__(self, copy=False):
+        """
         assert blocksize > 1, "invalid blocksize, >1 expected"
         assert cellsize > 0, "invalid cellsize, >0 expected"
         assert blocksize > cellsize, "blocksize should be > cellsize"
         assert blocksize % cellsize == 0, "blocksize should be a multiple of cellsize"
-        self.blocksize = blocksize
-        self.cellsize = cellsize
-        self.cells_per_block = self.blocksize / self.cellsize
-        # The lowest x,y coordinates, divided by cellsize
-        self.minrange = 0, 0
-        # The highest x,y coordinate, divided by cellsize
-        self.maxrange = int(self.cells_per_block), int(self.cells_per_block)
-        self.grid = np.zeros(shape=self.maxrange)
+        """
+        if not copy:
+            # The lowest x,y coordinates, divided by cellsize
+            self.minrange = 0, 0
+            # The highest x,y coordinate, divided by cellsize
+            self.maxrange = int(CELLS_PER_BLOCK), int(CELLS_PER_BLOCK)
+            self.grid = np.zeros(shape=self.maxrange)
 
-        # save the robot path by saving all the poses
-        # [ Pose @ time 0, Pose @ time 1, ... ]
-        self.path = []
+            # save the robot path by saving all the poses
+            # [ Pose @ time 0, Pose @ time 1, ... ]
+            self.path = []
 
-        # Precalculated x,y coordinate grid for use in get_cone
-        self.coordinate_grid = np.array([[(row * cellsize, col * cellsize)
-                                          for row in range(0, MAX_SIZE)]
-                                         for col in range(0, MAX_SIZE)])
 
-        # also create negative blocks, so that we have 4 blocks
-        self.get_cell(-1, -1)
+            # also create negative blocks, so that we have 4 blocks
+            self.get_cell(-1, -1)
 
     def add_pose(self, pose):
         self.path.append(pose)
@@ -59,7 +61,7 @@ class OccupancyGridMap:
         """
         row, col = self._get_cell(x, y)
         return self.grid[row, col]
-    
+
 
     def add_to_cell(self, x, y, val):
         row, col = self._get_cell(x, y)
@@ -108,8 +110,8 @@ class OccupancyGridMap:
         # get index of block that needs to be added or blocks to keep rectangular shape
         sign_row = math.copysign(1, out_of_bounds_pos[0])
         sign_col = math.copysign(1, out_of_bounds_pos[1])
-        new_pos = (int(sign_row * self.cells_per_block * math.ceil(abs(sign_row + out_of_bounds_pos[0]) / self.cells_per_block)),
-                   int(sign_col * self.cells_per_block * math.ceil(abs(sign_col + out_of_bounds_pos[1]) / self.cells_per_block)))
+        new_pos = (int(sign_row * CELLS_PER_BLOCK * math.ceil(abs(sign_row + out_of_bounds_pos[0]) / CELLS_PER_BLOCK)),
+                   int(sign_col * CELLS_PER_BLOCK * math.ceil(abs(sign_col + out_of_bounds_pos[1]) / CELLS_PER_BLOCK)))
         new_pos = tadd(self.minrange, new_pos)
 
         current_size = self.grid.shape
@@ -126,7 +128,7 @@ class OccupancyGridMap:
         self.minrange = new_minrange
         self.maxrange = new_maxrange
 
-    
+
     def get_cone(self, pose, cone_angle, view_distance):
         """
         Gives cell coordinates in the specified cone.
@@ -156,15 +158,15 @@ class OccupancyGridMap:
             'you gave %s rad.').format(view_angle)
 
         # TODO: limit bounding box
-        xmin = int(x - view_distance - self.cellsize)
-        xmax = int(x + view_distance + self.cellsize)
-        ymin = int(y - view_distance - self.cellsize)
-        ymax = int(y + view_distance + self.cellsize)
+        xmin = int(x - view_distance - CELLSIZE)
+        xmax = int(x + view_distance + CELLSIZE)
+        ymin = int(y - view_distance - CELLSIZE)
+        ymax = int(y + view_distance + CELLSIZE)
         rowmin, colmin = self.cartesian2grid(xmin, ymin)
         rowmax, colmax = self.cartesian2grid(xmax, ymax)
 
         grid_size = rowmax - rowmin, colmax - colmin
-        coordinates = (self.coordinate_grid[:grid_size[1], :grid_size[0], :]
+        coordinates = (COORDINATE_GRID[:grid_size[1], :grid_size[0], :]
                        + (xmin, ymin))
         rel_coords = coordinates - (x, y)
 
@@ -185,21 +187,21 @@ class OccupancyGridMap:
         return cell_coordinates[within_cone], distances[within_cone]
 
     def cartesian2grid(self, x, y):
-        row = int(round(y / self.cellsize)) - self.minrange[0]
-        col = int(round(x / self.cellsize)) - self.minrange[1]
+        row = int(round(y / CELLSIZE)) - self.minrange[0]
+        col = int(round(x / CELLSIZE)) - self.minrange[1]
         return row, col
 
     def np_cartesian2grid(self, coordinates):
-        scaled = coordinates[:, :, ::-1] / self.cellsize
+        scaled = coordinates[:, :, ::-1] / CELLSIZE
         return np.rint(scaled).astype(np.int) - self.minrange
 
     def grid2cartesian(self, row, col):
-        x = (col + self.minrange[1]) * self.cellsize
-        y = (row + self.minrange[0]) * self.cellsize
+        x = (col + self.minrange[1]) * CELLSIZE
+        y = (row + self.minrange[0]) * CELLSIZE
         return x, y
 
-    def in_grid(self,grid_index): #uses row+columns 
-        return not (grid_index[0] < 0 or grid_index[1] < 0 or grid_index[0] >= self.grid.shape[0] or grid_index[1] >= self.grid.shape[1])   
+    def in_grid(self,grid_index): #uses row+columns
+        return not (grid_index[0] < 0 or grid_index[1] < 0 or grid_index[0] >= self.grid.shape[0] or grid_index[1] >= self.grid.shape[1])
 
     def __str__(self):
         proc_grid = procentual_grid(self.grid)
@@ -217,17 +219,17 @@ class OccupancyGridMap:
 
     def __repr__(self):
         return "OccupancyGridMap(blocksize: %dcm, cellsize: %dcm, currentsize: %s)\n%s" % \
-               (self.blocksize, self.cellsize, self.grid.shape, self)
+               (BLOCKSIZE, CELLSIZE, self.grid.shape, self)
 
 
-        
+
 def procentual_grid(grid):
     """Converts a log odds grid to a percentual grid."""
     return 1 - 1 / (1 + np.exp(np.minimum(500, grid)))
 
 
-    
-    
+
+
 def str_cell(cell, chars=" ▁▂▃▄▅▆▇█░"):
     if cell == 0.5:  # 0.5 == unsure about cell
         return chars[-1]

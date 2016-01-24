@@ -11,11 +11,11 @@ from state import State
 
 hardware = Hardware("../test/testdata-film05.txt")
 #hardware = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file='../test/testdata-film05.txt')
-state = State(n_particles=50, cellsize=5, blocksize=100)
+state = State(n_particles=50)
 
 
 sumdeltas = 0
-
+current_time = 0
 start = time.time()
 i = 0
 for update in hardware.updates():
@@ -24,6 +24,7 @@ for update in hardware.updates():
     state.update(update)
     stop_time = time.time()
 
+    current_time += update.timedelta
     timedeltadelta = update.timedelta - (stop_time - start_time) * 1000
     sumdeltas += timedeltadelta
 
@@ -35,7 +36,7 @@ for update in hardware.updates():
     if i % 100:
         with open("gridworld.pkl", "wb") as f:
             best_particle = state.best_particle()
-            pickle.dump(str(best_particle.map), f)
+            pickle.dump([str(best_particle.map), current_time], f)
 
 print(sumdeltas)
 stop = time.time()

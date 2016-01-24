@@ -12,10 +12,10 @@ RESAMPLE_PERIOD = 10
 
 
 class State:
-    def __init__(self, n_particles=1, cellsize=5, blocksize=100):
+    def __init__(self, n_particles=1):
         self.latest_motion = MotionUpdate()
         self.n_particles = n_particles
-        self.particles = [Particle(self.n_particles, cellsize, blocksize)
+        self.particles = [Particle(self.n_particles)
                           for _ in range(self.n_particles)]
         self.n_sensor_updates_since_last_resample = 0
 
@@ -60,7 +60,7 @@ class State:
                 i += 1
                 c += self.particles[i].weight
 
-            new_particles.append(copy.deepcopy(self.particles[i]))
+            new_particles.append(self.copy_particle(self.particles[i]))
 
         self.particles = new_particles
 
@@ -76,16 +76,28 @@ class State:
     def best_particle(self):
         return max(self.particles, key=lambda particle: particle.weight)
 
+    def copy_particle(self, old_p):
+        p = Particle(self.n_particles, True)
+        p.pose = Pose(old_p.pose.x, old_p.pose.y, old_p.pose.theta)
+        p.weight = old_p.weight
+        p.map.minrange = old_p.map.minrange
+        p.map.maxrange = old_p.map.maxrange
+        p.map.grid = old_p.map.grid.copy()
+        p.map.path = old_p.map.path.copy()
+
+        return p
+
 
 class Particle:
-    def __init__(self, n_particles, cellsize, blocksize):
-        self.map = OccupancyGridMap(blocksize=blocksize, cellsize=cellsize)
-        x_co=random.gauss(0,0.2)
-        y_co=random.gauss(0,0.2)
-        theta=random.gauss(0,0.05)
-        self.pose = Pose(x_co, y_co, theta)
+    def __init__(self, n_particles, copy=False):
+        self.map = OccupancyGridMap(copy)
+        if not copy:
+            x_co=random.gauss(0,0.2)
+            y_co=random.gauss(0,0.2)
+            theta=random.gauss(0,0.05)
+            self.pose = Pose(x_co, y_co, theta)
 
-        self.weight = 1.0 / n_particles
+            self.weight = 1.0 / n_particles
 
     def update_motion(self, motion, timedelta):
         self.pose = motion_model.calculate_pose(self.pose, motion, timedelta)

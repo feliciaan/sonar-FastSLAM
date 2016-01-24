@@ -1,3 +1,4 @@
+from datetime import timedelta
 from tkinter import *
 import pickle
 
@@ -22,8 +23,10 @@ class GridWorld():
     def update_gridworld(self):
 
         try:
-            ogm = pickle.load( open( "gridworld.pkl", "rb") )
+            list = pickle.load(open("gridworld.pkl", "rb"))
 
+            ogm = list[0]
+            current_time = list[1]
             length = ogm.find('\n')
             width = (length+1)*BLOCK
             height = (ogm.count('\n')+2)*BLOCK
@@ -105,6 +108,8 @@ class GridWorld():
                     # draw grid cell
                     self.w.create_rectangle(x, y, x + BLOCK, y + BLOCK, fill=colors[c], width=0)
                     x += BLOCK
+
+            self.w.create_text(self.width/2, 20, text= ("Timestamp: %s" % (str(timedelta(seconds=current_time/1000)))))
 
         except EOFError:
             # conflict with writing and reading the gridworld.pkl file

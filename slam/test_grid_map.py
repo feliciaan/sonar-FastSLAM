@@ -11,7 +11,7 @@ from state import State
 
 hardware = Hardware("../test/testdata-film05.txt")
 #hardware = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file='../test/testdata-film05.txt')
-state = State(n_particles=50)
+state = State(n_particles=5)
 
 
 sumdeltas = 0
@@ -43,4 +43,4 @@ stop = time.time()
 print("elapsed time : ", (stop - start) * 1000)
 with open("gridworld.pkl", "wb") as f:
     best_particle = state.best_particle()
-    pickle.dump(str(best_particle.map), f)
+    pickle.dump([str(best_particle.map), current_time], f)

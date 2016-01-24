@@ -8,6 +8,7 @@ from hardware import MotionUpdate, SensorUpdate
 from pose import Pose
 
 
+RESAMPLE_PERIOD = 10
 
 
 class State:
@@ -16,7 +17,8 @@ class State:
         self.n_particles = n_particles
         self.particles = [Particle(self.n_particles, cellsize, blocksize)
                           for _ in range(self.n_particles)]
-        
+        self.n_sensor_updates_since_last_resample = 0
+
 
     def update(self, update):
         if isinstance(update, MotionUpdate):
@@ -27,15 +29,19 @@ class State:
     def update_motion(self, update):
         for particle in self.particles:
             particle.update_motion(self.latest_motion, update.timedelta)
-        
+
         self.latest_motion = update
 
     def update_sensor(self, update):
         for particle in self.particles:
             particle.update_motion(self.latest_motion, update.timedelta)
             particle.update_sensor(update)
-               
-        self.resample()
+
+        # Lowered resampling frequency (p. 109, Thrun)
+        self.n_sensor_updates_since_last_resample += 1
+        if self.n_sensor_updates_since_last_resample >= RESAMPLE_PERIOD:
+            self.resample()
+            self.n_sensor_updates_since_last_resample = 0
 
     def resample(self):
         """Implements algorithm Low_variance_sampler (Thrun, p. 110)"""

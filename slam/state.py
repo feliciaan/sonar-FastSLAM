@@ -1,3 +1,4 @@
+import copy
 import random
 
 import motion_model
@@ -38,36 +39,37 @@ class State:
 
     def resample(self):
         """Implements algorithm Low_variance_sampler (Thrun, p. 110)"""
-        
+
         self._normalize_particle_weights()
-       
+
         new_particles = []
-        
+
         r = random.random() / self.n_particles
         c = self.particles[0].weight
         i = 0
         for m in range(self.n_particles):
             u = r + m / self.n_particles
-            
+
             while u > c:
                 i += 1
-                
                 c += self.particles[i].weight
-            new_particles.append(self.particles[i])
-        
-       #TODO add random particles to see if it improves results
-     
+
+            new_particles.append(copy.deepcopy(self.particles[i]))
+
+        self.particles = new_particles
+
+        # TODO add random particles to see if it improves results
+
 
     def _normalize_particle_weights(self):
         total_weight = sum(particle.weight for particle in self.particles)
         for particle in self.particles:
             particle.weight /= total_weight
-        
-        
-            
-    
+
+
     def best_particle(self):
         return max(self.particles, key=lambda particle: particle.weight)
+
 
 class Particle:
     def __init__(self, n_particles, cellsize, blocksize):
@@ -76,7 +78,7 @@ class Particle:
         y_co=random.gauss(0,0.2)
         theta=random.gauss(0,0.05)
         self.pose = Pose(x_co, y_co, theta)
-        
+
         self.weight = 1.0 / n_particles
 
     def update_motion(self, motion, timedelta):

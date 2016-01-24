@@ -120,6 +120,8 @@ class MotionUpdate:
         assert match is not None, "Invalid input for motion update: "+line
         self.left = int(match.group(1))
         self.right = int(match.group(2))
+        # TODO temporary fix for error in Arduino code
+        self.left, self.right = self.right, self.left
         self.correction = int(match.group(3))
         self.timedelta = int(match.group(4))
 

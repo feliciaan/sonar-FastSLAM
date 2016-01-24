@@ -51,16 +51,26 @@ class GridWorld():
 
             # used colors: http://www.color-hex.com/color/0000ff
             colors = {}
-            colors[' '] = "#9999ff"
-            colors['▁'] = "#0000ff"
-            colors['▂'] = "#0000e5"
-            colors['▃'] = "#0000cc"
-            colors['▄'] = "#0000b2"
-            colors['▅'] = "#000099"
-            colors['▆'] = "#00007f"
+            colors[' '] = "#e5e5ff"
+            colors['▁'] = "#ccccff"
+            colors['▂'] = "#9999ff"
+            colors['▃'] = "#6666ff"
+            colors['▄'] = "#3232ff"
+            colors['▅'] = "#0000cc"
+            colors['▆'] = "#000099"
             colors['▇'] = "#000066"
-            colors['█'] = "#00004c"
-            colors['░'] = "#dee3e8"
+            colors['█'] = "#000000"
+            colors['░'] = "#aaaaaa"
+            #  colors[' '] = "#9999ff"
+            #  colors['▁'] = "#0000ff"
+            #  colors['▂'] = "#0000e5"
+            #  colors['▃'] = "#0000cc"
+            #  colors['▄'] = "#0000b2"
+            #  colors['▅'] = "#000099"
+            #  colors['▆'] = "#00007f"
+            #  colors['▇'] = "#000066"
+            #  colors['█'] = "#00004c"
+            #  colors['░'] = "#dee3e8"
 
             arcs = {}
             arcs['→'] = (135, 90)

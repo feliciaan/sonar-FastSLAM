@@ -117,7 +117,9 @@ class MotionUpdate:
         if line is None:
             line = "el0er0cor0t0"
         match = re.match('el(-?\d+)er(-?\d+)cor(-?\d+)t(\d+)', line)
-        assert match is not None, "Invalid input for motion update: "+line
+        if match is None:
+            return None
+        #assert match is not None, "Invalid input for motion update: "+line
         self.left = int(match.group(1))
         self.right = int(match.group(2))
         # TODO temporary fix for error in Arduino code

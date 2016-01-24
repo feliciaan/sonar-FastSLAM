@@ -5,7 +5,7 @@ from grid_map import procentual_grid
 
 MAX_RANGE = 150  # In cm
 CONE_ANGLE = 0.872664626  # In radians
-PROBABILITY_FREE = 0.00001
+PROBABILITY_FREE = 0.0001
 RECOGNITION_SENSITIVITY = 5 # In cm
 
 
@@ -159,7 +159,7 @@ def update_map(measurements, pose, map_):
 
         map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
         if measurement and len(non_empty_coords) > 0:
-            non_empty_log_odds = _log_odds(.5 + (.5 / (len(non_empty_coords) + 1)))
+            non_empty_log_odds = _log_odds(.5 + (.01 / (len(non_empty_coords) + 1)))
             map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
 
 

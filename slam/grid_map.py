@@ -175,8 +175,10 @@ class OccupancyGridMap:
 
         angles = np.arctan2(rel_coords[:, :, 1], rel_coords[:, :, 0])
         rel_angles = (angles % (2 * np.pi)) - (theta % (2 * np.pi))
-        within_cone_angle = ((-view_angle <= rel_angles)
-                             & (rel_angles <= view_angle))
+        within_cone_angle = (((-view_angle <= rel_angles)
+                              & (rel_angles <= view_angle))
+                             | ((-view_angle <= 2 * np.pi - rel_angles)
+                                & (2 * np.pi - rel_angles <= view_angle)))
 
         within_cone = within_view_distance & within_cone_angle
 

@@ -347,7 +347,7 @@ void auto_move(const int left, const int front, const int right) {
   } else {
     digitalWrite(LED, LOW);
     // valid input
-    if (front < 10) {
+    if (front < 25) {
       // determine turn direction
       if (millis() - last_move > DIR_CHANGE_TIME) {
         // we can choose freely the direction to turn, as the direction holdon expired
@@ -399,7 +399,7 @@ void check_env(const int left, const int front, const int right) {
  /*
   * Stop the action when the environment is unsafe
   */
-if (front < 20 || left < 20 || right < 20) {
+  if (front < 20 || left < 20 || right < 20) {
     halt();
   }
   else if (front == OUT_OF_RANGE || (left == OUT_OF_RANGE && right == OUT_OF_RANGE)) {
@@ -436,13 +436,13 @@ void loop() {
   last_order = new_order;
 
   switch (last_order) {
-    case 'a': auto_move(left, front, right);  break;
-    case 'z': forward();                      break;
+    case 'A': auto_move(left, front, right);  break;
+    case 'w': forward();                      break;
     case 's': backward();                     break;
-    case 'D': timed_turn(LEFT, ANGLE_10DEG);  break;
-    case 'd': timed_turn(LEFT, ANGLE_45DEG);  break;
-    case 'Q': timed_turn(RIGHT, ANGLE_10DEG); break;
-    case 'q': timed_turn(RIGHT, ANGLE_45DEG); break;
+    case 'a': timed_turn(LEFT, ANGLE_10DEG);  break;
+    // case '': timed_turn(LEFT, ANGLE_45DEG);  break;
+    case 'd': timed_turn(RIGHT, ANGLE_10DEG); break;
+    case 'D': timed_turn(RIGHT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
     case 'h': halt();                          break;

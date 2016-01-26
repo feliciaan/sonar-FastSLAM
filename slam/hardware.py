@@ -28,7 +28,7 @@ class Hardware:
         self.read_input = True
         print('serial_port : ',serial_port)
         print('testfile : ',testfile)
-        assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
+        # assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
         print('self.file : ', self.file)
         self.output_file = output_file

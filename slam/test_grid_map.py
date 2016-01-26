@@ -11,7 +11,7 @@ from state import State
 
 #hardware = Hardware("../test/live.txt")
 # /dev/tty.HC-06-DevB
-hardware = Hardware(serial_port='/dev/rfcomm0', output_file='../test/live.txt')
+hardware = Hardware(serial_port='/dev/rfcomm0', output_file='../test/live.txt', testfile='../test/test.txt')
 state = State(n_particles=5)
 
 
@@ -35,7 +35,7 @@ for update in hardware.updates():
     else:
         #print("Faster than updates: %f, current delay %f" % (timedeltadelta, sumdeltas))
         None
-    if i % 100:
+    if i % 250:
         with open("gridworld.pkl", "wb") as f:
             best_particle = state.best_particle()
             pickle.dump([str(best_particle.map), current_time], f)

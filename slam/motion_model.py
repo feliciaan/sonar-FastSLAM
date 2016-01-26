@@ -14,15 +14,15 @@ WHEEL_RADIUS=0.015 #m
 GAUSSIAN_NOISE = True
 
 # Number of ms per 45 degrees depending on surface ...
-MS_PER_45_DEGREES = 120
+MS_PER_45_DEGREES = 210
 
 
 #TODO change error parameters to improve result (if using sample motion model)
 #error parameters
 ERROR1=1#translational error
 ERROR2=1#translational error
-ERROR3=0.01#angular error
-ERROR4=0.01#angular error
+ERROR3=0.0001#angular error
+ERROR4=0.0001#angular error
 
 
 def calculate_pose(old_pose, motion, timedelta):

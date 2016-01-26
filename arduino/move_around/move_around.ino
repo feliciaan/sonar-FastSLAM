@@ -445,7 +445,7 @@ void loop() {
     case 'q': timed_turn(RIGHT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
-    case 'S': halt();                          break;
+    case 'h': halt();                          break;
     // case ' ': halt();                         break;
     default : check_env(left, front, right);  break;
   }

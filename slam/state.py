@@ -29,7 +29,7 @@ class State:
     def update(self, update):
         # batch the sensor updates
         # 5 measurements --> 1 measurement
-        BATCH_SIZE = 10
+        BATCH_SIZE = 4
 
         if isinstance(update, MotionUpdate):
             self.flush = True

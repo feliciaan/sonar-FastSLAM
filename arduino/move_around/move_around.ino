@@ -399,7 +399,7 @@ void check_env(const int left, const int front, const int right) {
  /*
   * Stop the action when the environment is unsafe
   */
-  if (front < 20 || left < 20 || right < 20) {
+  if (front < 40 || left < 20 || right < 20) {
     halt();
   }
   else if (front == OUT_OF_RANGE || (left == OUT_OF_RANGE && right == OUT_OF_RANGE)) {
@@ -429,20 +429,20 @@ void loop() {
   if (new_order == '_') {
     // no order received this tick
     // the default order is 'halt', only if we are in auto mode, we continue auto mode
-    if (last_order == 'a') {
-      new_order = 'a';
+    if (last_order == 'A') {
+      new_order = 'A';
     }
   }
   last_order = new_order;
 
   switch (last_order) {
     case 'A': auto_move(left, front, right);  break;
-    case 'w': forward(); sleep(100);halt();   break;
-    case 's': backward(); sleep(100);halt();  break;
-    case 'a': timed_turn(LEFT, ANGLE_10DEG);  break;
-    // case '': timed_turn(LEFT, ANGLE_45DEG);  break;
-    case 'd': timed_turn(RIGHT, ANGLE_10DEG); break;
-    case 'D': timed_turn(RIGHT, ANGLE_45DEG); break;
+    case 'w': forward();    break; //delay(100);halt();
+    case 's': backward();   break;  // delay(100);halt();
+    //case 'a': timed_turn(LEFT, ANGLE_10DEG);  break;
+    case 'a': timed_turn(RIGHT, ANGLE_45DEG);   break;
+    //case 'd': timed_turn(RIGHT, ANGLE_10DEG); break;
+    case 'd': timed_turn(LEFT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
     case 'h': halt();                          break;

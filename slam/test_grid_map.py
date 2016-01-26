@@ -39,7 +39,7 @@ for update in hardware.updates():
         with open("gridworld.pkl", "wb") as f:
             best_particle = state.best_particle()
             pickle.dump([str(best_particle.map), current_time], f)
-            print(str(best_particle.map))
+            # print(str(best_particle.map))
 
 print(sumdeltas)
 stop = time.time()

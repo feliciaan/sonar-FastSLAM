@@ -39,6 +39,8 @@ def calculate_pose(old_pose, motion, timedelta):
     elif distance_left == -distance_right:
         dx, dy = 0, 0
         dtheta = timedelta * (math.pi / 4) / MS_PER_45_DEGREES
+        if distance_left > 0:
+        	dtheta *= -1
         # dtheta=distance_left/(WHEEL_DISTANCE_IN_CM/2) #left turn results in positive dtheta, uses formula length arc
 
 

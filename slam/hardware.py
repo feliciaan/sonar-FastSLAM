@@ -1,5 +1,6 @@
 import re
 import threading
+import sys
 
 SERIAL_AVAILABLE = True
 try:
@@ -25,12 +26,16 @@ class Hardware:
         self.serial = None
         self.t = None
         self.read_input = True
+        print('serial_port : ',serial_port)
+        print('testfile : ',testfile)
         assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
+        print('self.file : ', self.file)
         self.output_file = output_file
         if SERIAL_AVAILABLE and serial_port is not None:
             try:
-                self.serial = Serial(serial_port, 9600, timeout=1)
+                # self.serial = Serial(serial_port, 9600, timeout=1)
+                self.serial = Serial(serial_port)  # , 9600, timeout=1
                 # Different thread for manual control
                 self.t = threading.Thread(target=self.send_messages)
                 self.t.start()
@@ -70,19 +75,23 @@ class Hardware:
                 return
         print("Reading input:")
         while self.read_input:
-            key = readchar.readkey()
+            #key = readchar.readkey()
+            print("read in ...")
+            # key = sys.stdin.read(1)
+            key = input("type command ! \n")
+            print('key : ',key)
             if key in ['\x03', '\x04']:  # if control-c stop
                 print("Retuning control to the program")
                 self.read_input = False
                 break
-
+            print('input : ', len(key))
             if len(key) == 1:
                 self.write(key)
-            else:
-                # convert to other thing if necessary
-                new_c = CONVERT_CHARS.get(key)
-                if new_c:
-                    self.write(new_c)
+            # else:
+            #     convert to other thing if necessary
+                # new_c = CONVERT_CHARS.get(key)
+                # if new_c:
+                #     self.write(new_c)
 
 
 class SensorUpdate:
@@ -95,7 +104,7 @@ class SensorUpdate:
         def out_of_range(s):
             i = int(s)
             if i == 9999:
-                return None
+                return i
             return i
 
         self.left = out_of_range(match.group(1))

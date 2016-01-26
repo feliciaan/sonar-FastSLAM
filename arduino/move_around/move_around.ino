@@ -399,7 +399,7 @@ void check_env(const int left, const int front, const int right) {
  /*
   * Stop the action when the environment is unsafe
   */
-if (front < 15 || left < 5 || right < 5) {
+if (front < 20 || left < 20 || right < 20) {
     halt();
   }
   else if (front == OUT_OF_RANGE || (left == OUT_OF_RANGE && right == OUT_OF_RANGE)) {
@@ -445,8 +445,8 @@ void loop() {
     case 'q': timed_turn(RIGHT, ANGLE_45DEG); break;
     case 't': test_motors();                  break;
     case 'x':
-    case 'S':
-    case ' ': halt();                         break;
+    case 'S': halt();                          break;
+    // case ' ': halt();                         break;
     default : check_env(left, front, right);  break;
   }
 }

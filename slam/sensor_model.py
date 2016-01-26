@@ -142,25 +142,33 @@ def _normal_distribution(x, mean, stddev):
 
 def update_map(measurements, pose, map_):
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
-        measurement = True
+        #measurement = True
         if measured_dist is None or measured_dist >= MAX_RANGE:
             measured_dist = MAX_RANGE
-            measurement = False
+            #measurement = False
+
+            # measured_dist > MAX_RANGE --> short reading or indeed nothing
+
 
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
         cell_coordinates, distances = map_.get_cone(sensor_pose, CONE_ANGLE,
                                                     measured_dist)
+        # measured distance on old map --> cell_coordinates that should be updated
 
-        cutoff = measured_dist * 0.8
-        empty_coords = cell_coordinates[distances < cutoff]
-        non_empty_coords = cell_coordinates[distances > cutoff]
 
-        map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
-        if measurement and len(non_empty_coords) > 0:
-            non_empty_log_odds = _log_odds(.5 + (.01 / (len(non_empty_coords) + 1)))
-            map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
+        # cutoff = measured_dist * 0.8
+        # empty_coords = cell_coordinates[distances < cutoff]
+        # non_empty_coords = cell_coordinates[distances > cutoff]
+
+        # map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
+
+        map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(PROBABILITY_FREE)
+
+        #if measurement and len(non_empty_coords) > 0:
+        #    non_empty_log_odds = _log_odds(.5 + (.01 / (len(non_empty_coords) + 1)))
+        #    map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
 
 
 def _measurement_per_angle(measurements):

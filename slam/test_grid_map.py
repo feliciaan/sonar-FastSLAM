@@ -9,8 +9,9 @@ from state import State
 
 
 
-hardware = Hardware("../test/testdata-film05.txt")
-#hardware = Hardware(serial_port='/dev/tty.HC-06-DevB', output_file='../test/testdata-film05.txt')
+#hardware = Hardware("../test/live.txt")
+# /dev/tty.HC-06-DevB
+hardware = Hardware(serial_port='/dev/rfcomm0', output_file='../test/live.txt')
 state = State(n_particles=5)
 
 
@@ -29,10 +30,11 @@ for update in hardware.updates():
     sumdeltas += timedeltadelta
 
     if timedeltadelta < 0:
-        print("Slower than updates: %f, current delay %f" % (timedeltadelta, sumdeltas))
+        #print("Slower than updates: %f, current delay %f" % (timedeltadelta, sumdeltas))
+        None
     else:
-        print("Faster than updates: %f, current delay %f" % (timedeltadelta, sumdeltas))
-
+        #print("Faster than updates: %f, current delay %f" % (timedeltadelta, sumdeltas))
+        None
     if i % 100:
         with open("gridworld.pkl", "wb") as f:
             best_particle = state.best_particle()

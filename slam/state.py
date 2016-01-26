@@ -1,5 +1,6 @@
 import copy
 import random
+import statistics
 
 import motion_model
 import sensor_model
@@ -20,11 +21,89 @@ class State:
         self.n_sensor_updates_since_last_resample = 0
 
 
+        self.sensor_buffer=[]
+        self.last_batch=[]
+        self.flush = False
+
+
     def update(self, update):
+        # batch the sensor updates
+        # 5 measurements --> 1 measurement
+        BATCH_SIZE = 10
+
         if isinstance(update, MotionUpdate):
-            self.update_motion(update)
+            self.flush = True
         elif isinstance(update, SensorUpdate):
-            self.update_sensor(update)
+            None
+        else:
+            assert('update should be either motion or sensor ')
+
+        if(self.flush):
+            # motion update --> so flush the last sensor measurements
+
+            if len(self.sensor_buffer)>0:
+                sum_timedelta=0
+                for upd in self.sensor_buffer:
+                    sum_timedelta += upd.timedelta
+                batch_update = self.last_batch
+
+                if batch_update is None:
+                    # Take the mean values of
+                    batch_update= self.calculate_batch_update()
+
+                batch_update.timedelta = sum_timedelta
+
+                # RESET the sensor_buffer
+                self.sensor_buffer = []
+                # RESET the last_batch
+                self.last_batch = None
+
+                self.update_sensor(batch_update)
+
+            print(update)
+            # input('enter to continue')
+            self.update_motion(update)
+            self.flush = False
+
+        else:
+            self.sensor_buffer.append(update)
+
+            if len(self.sensor_buffer)>BATCH_SIZE-1:
+
+                batch_update= self.calculate_batch_update()
+
+                print(batch_update)
+                # input('enter to continue')
+
+                self.update_sensor(batch_update)
+                # save the sensor_buffer in the back_up_buffer
+                self.last_batch = batch_update
+                # RESET the sensor_buffer
+                self.sensor_buffer = []
+
+    def calculate_batch_update(self):
+        # calculate the mean for the measurements + sum the timedeltas
+        mean_left=[]
+        mean_front=[]
+        mean_right=[]
+        sum_timedelta=0
+        for upd in self.sensor_buffer:
+            mean_left.append(upd.left)
+            mean_front.append(upd.front)
+            mean_right.append(upd.right)
+            sum_timedelta+=upd.timedelta
+
+        # print(mean_left)
+        # print(mean_front)
+        # print(mean_right)
+
+        batch_update = self.sensor_buffer[0]
+        batch_update.left = statistics.median(mean_left)
+        batch_update.front = statistics.median(mean_front)
+        batch_update.right = statistics.median(mean_right)
+        batch_update.timedelta = sum_timedelta
+
+        return batch_update
 
     def update_motion(self, update):
         for particle in self.particles:

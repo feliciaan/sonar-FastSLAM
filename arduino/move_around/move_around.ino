@@ -437,8 +437,8 @@ void loop() {
 
   switch (last_order) {
     case 'A': auto_move(left, front, right);  break;
-    case 'w': forward();                      break;
-    case 's': backward();                     break;
+    case 'w': forward(); sleep(100);halt();   break;
+    case 's': backward(); sleep(100);halt();  break;
     case 'a': timed_turn(LEFT, ANGLE_10DEG);  break;
     // case '': timed_turn(LEFT, ANGLE_45DEG);  break;
     case 'd': timed_turn(RIGHT, ANGLE_10DEG); break;

@@ -8,7 +8,6 @@ from grid_map import OccupancyGridMap
 from hardware import MotionUpdate, SensorUpdate
 from pose import Pose
 
-
 RESAMPLE_PERIOD = 10
 
 
@@ -20,11 +19,9 @@ class State:
                           for _ in range(self.n_particles)]
         self.n_sensor_updates_since_last_resample = 0
 
-
-        self.sensor_buffer=[]
-        self.last_batch=[]
+        self.sensor_buffer = []
+        self.last_batch = []
         self.flush = False
-
 
     def update(self, update):
         # print(update)
@@ -38,20 +35,20 @@ class State:
         elif isinstance(update, SensorUpdate):
             None
         else:
-            assert('update should be either motion or sensor ')
+            assert ('update should be either motion or sensor ')
 
-        if(self.flush):
+        if (self.flush):
             # motion update --> so flush the last sensor measurements
 
-            if len(self.sensor_buffer)>0:
-                sum_timedelta=0
+            if len(self.sensor_buffer) > 0:
+                sum_timedelta = 0
                 for upd in self.sensor_buffer:
                     sum_timedelta += upd.timedelta
                 batch_update = self.last_batch
 
                 if batch_update is None:
                     # Take the mean values of
-                    batch_update= self.calculate_batch_update()
+                    batch_update = self.calculate_batch_update()
 
                 batch_update.timedelta = sum_timedelta
 
@@ -63,16 +60,15 @@ class State:
                 self.update_sensor(batch_update)
 
             print(update)
-           # input('enter to continue')
+            # input('enter to continue')
             self.update_motion(update)
             self.flush = False
 
         else:
             self.sensor_buffer.append(update)
 
-            if len(self.sensor_buffer)>BATCH_SIZE-1:
-
-                batch_update= self.calculate_batch_update()
+            if len(self.sensor_buffer) > BATCH_SIZE - 1:
+                batch_update = self.calculate_batch_update()
 
                 print(batch_update)
                 # input('enter to continue')
@@ -85,15 +81,15 @@ class State:
 
     def calculate_batch_update(self):
         # calculate the mean for the measurements + sum the timedeltas
-        mean_left=[]
-        mean_front=[]
-        mean_right=[]
-        sum_timedelta=0
+        mean_left = []
+        mean_front = []
+        mean_right = []
+        sum_timedelta = 0
         for upd in self.sensor_buffer:
             mean_left.append(upd.left)
             mean_front.append(upd.front)
             mean_right.append(upd.right)
-            sum_timedelta+=upd.timedelta
+            sum_timedelta += upd.timedelta
 
         # print(mean_left)
         # print(mean_front)
@@ -147,12 +143,12 @@ class State:
 
         # TODO add random particles to see if it improves results
 
-
     def _normalize_particle_weights(self):
+        # [print(particle.weight) for particle in self.particles]
+        # exit()
         total_weight = sum(particle.weight for particle in self.particles)
         for particle in self.particles:
             particle.weight /= total_weight
-
 
     def best_particle(self):
         return max(self.particles, key=lambda particle: particle.weight)
@@ -173,9 +169,9 @@ class Particle:
     def __init__(self, n_particles, copy=False):
         self.map = OccupancyGridMap(copy)
         if not copy:
-            x_co=random.gauss(0,0.2)
-            y_co=random.gauss(0,0.2)
-            theta=random.gauss(0,0.05)
+            x_co = random.gauss(0, 0.2)
+            y_co = random.gauss(0, 0.2)
+            theta = random.gauss(0, 0.05)
             self.pose = Pose(x_co, y_co, theta)
 
             self.weight = 1.0 / n_particles
@@ -185,5 +181,5 @@ class Particle:
         self.map.add_pose(self.pose)
 
     def update_sensor(self, update):
-        self.weight = sensor_model.calc_weight(update, self.pose, self.map)
+        self.weight += sensor_model.calc_weight(update, self.pose, self.map)
         sensor_model.update_map(update, self.pose, self.map)

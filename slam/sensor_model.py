@@ -17,7 +17,7 @@ def calc_weight(measurements, pose, map_):
         # TODO: Pose of sensor is simplified to pose of robot
         sensor_pose = Pose(pose.x, pose.y, pose.theta + sensor_angle)
 
-
+        # TODO: what if no expected distance is known? Fixed -> weight
 
         """likelihoods fields range finder, p172"""
         if measured_dist is not None and measured_dist < MAX_RANGE:  # discard max range readings
@@ -39,7 +39,8 @@ def calc_weight(measurements, pose, map_):
                 prob = _prob_of_distances(distance, 0.0)
                 probability *= prob
         else:
-            # TODO: what if no expected distance is known? Fixed -> weight
+            # TODO: if there is no measurement --> probability stays 1 ?
+            # if sensor got OUT of range --> particle gets higher chance ??
             None
 
     return probability

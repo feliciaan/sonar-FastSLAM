@@ -6,7 +6,7 @@ from grid_map import procentual_grid
 MAX_RANGE = 150  # In cm
 CONE_ANGLE = 0.872664626  # In radians
 PROBABILITY_FREE = 0.001
-RECOGNITION_SENSITIVITY = 5  # In cm
+RECOGNITION_SENSITIVITY = 10  # In cm
 
 
 def calc_weight(measurements, pose, map_):
@@ -29,7 +29,11 @@ def calc_weight(measurements, pose, map_):
             nearest_object = find_nearest_neighbor(map_, (x_co, y_co))
             # when sensor measurement falls into unknown category, prob is assumed constant p173
             if nearest_object == "unknown":
-                probability *= 1 / MAX_RANGE
+                # measurement => there is something
+                # map => I don't know it ...
+                # OLD --> probability *= 1 / MAX_RANGE
+                # NEW --> don't touch the weight of the particle
+                None
 
             # find nearest neighbour that is occupied
             elif nearest_object is not None:
@@ -38,6 +42,7 @@ def calc_weight(measurements, pose, map_):
                 distance = math.hypot(sub[0], sub[1])
                 prob = _prob_of_distances(distance, 0.0)
                 probability *= prob
+
         else:
             # TODO: if there is no measurement --> probability stays 1 ?
             # if sensor got OUT of range --> particle gets higher chance ??
@@ -68,6 +73,7 @@ finds nearest occupied cell for cell with given position
 
 
 def find_nearest_neighbor(map, position):
+    NN_THRESHOLD = 0.9
     grid_index = map.cartesian2grid(position[0], position[1])
     if (not map.in_grid(grid_index)):
         return "unknown"
@@ -77,10 +83,16 @@ def find_nearest_neighbor(map, position):
         return "unknown"
 
     # measured cell is occupied
-    if proc_value_cell(cell) == 1:
+    if proc_value_cell(cell) > NN_THRESHOLD:
         return position
     else:
 
+        '''
+        This looks for closests neighboring cell of endpoint cone
+        --> It looks in a circle around this point
+        OPTIMIZATION:
+            Should be better to look in an oval kind of shape
+        '''
         distance = 1
         # check in radius around current position, using (row,column) positions in grid
         # if counter is 0, no occupied positions inside the grid have been found, return None
@@ -92,21 +104,22 @@ def find_nearest_neighbor(map, position):
                     for b in (-1, 1):
                         pos = (grid_index[0] + a * distance, grid_index[1] + b * i)
                         if (map.in_grid(pos)):
-                            if proc_value_cell(map.grid[pos[0], pos[1]]) == 1:
+                            if proc_value_cell(map.grid[pos[0], pos[1]]) > NN_THRESHOLD:
                                 counter += 1
                                 return map.grid2cartesian(pos[0], pos[1])
 
                         pos = (grid_index[0] + a * i, grid_index[1] + b * distance)
                         if (map.in_grid(pos)):
-                            if proc_value_cell(map.grid[pos[0], pos[1]]) == 1:
+                            if proc_value_cell(map.grid[pos[0], pos[1]]) > NN_THRESHOLD:
                                 counter += 1
                                 return map.grid2cartesian(pos[0], pos[1])
-
+                # print('counter: ', counter)
             distance += 1
         return None
 
 
 def distance_to_closest_object_in_cone(map, pose, cone_width_angle, max_radius):
+    # NOT used yet...
     """
         Raytraces until a first object is found. Does not search further then max_radius.
         Keep max_radius quite small (e.g. 130cm or 200cm), as it will get slow otherwise.
@@ -153,6 +166,23 @@ def _normal_distribution(x, mean, stddev):
 
 
 def update_map(measurements, pose, map_):
+    # set the space around the robot FREE
+    robot_pose = Pose(pose.x, pose.y, pose.theta)
+    grid_index = map_.cartesian2grid(robot_pose.x, robot_pose.y)
+
+    robot_coords=[]
+    PATH_WIDTH = 4
+    for i in range(-PATH_WIDTH, PATH_WIDTH+1, 1):
+        for j in range(-PATH_WIDTH, PATH_WIDTH+1, 1):
+            pos = (grid_index[0] + i, grid_index[1] + j)
+            if (map_.in_grid(pos)):
+                robot_coords.append(pos)
+
+    for coords in robot_coords:
+        map_.grid[coords[0], coords[1]] += _log_odds(PROBABILITY_FREE)
+
+
+
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
 
         measurement = True

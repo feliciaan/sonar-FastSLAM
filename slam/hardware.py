@@ -28,14 +28,15 @@ class Hardware:
         self.read_input = True
         print('serial_port : ',serial_port)
         print('testfile : ',testfile)
-        # assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
+        #assert (testfile is None) != (serial_port is None), "You should either pass a 'testfile' or a 'serial_port' to initialize"
         self.file = testfile
         print('self.file : ', self.file)
+        print('SERIAL_AVAILABLE : ', SERIAL_AVAILABLE)
         self.output_file = output_file
         if SERIAL_AVAILABLE and serial_port is not None:
             try:
                 # self.serial = Serial(serial_port, 9600, timeout=1)
-                self.serial = Serial(serial_port)  # , 9600, timeout=1
+                self.serial = Serial('/dev/rfcomm0')  # , 9600, timeout=1
                 # Different thread for manual control
                 self.t = threading.Thread(target=self.send_messages)
                 self.t.start()

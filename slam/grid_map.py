@@ -93,6 +93,7 @@ class OccupancyGridMap:
 
         row, col = self.cartesian2grid(x, y)
 
+
         # Check for out of bounds
         if (row < 0 or col < 0
                 or row >= self.grid.shape[0] or col >= self.grid.shape[1]):

@@ -6,7 +6,7 @@ import pickle
 REFRESH = 1000
 
 # BLOCK size
-BLOCK = 4
+BLOCK = 5
 
 
 class GridWorld():
@@ -64,16 +64,16 @@ class GridWorld():
             colors['▇'] = "#000066"
             colors['█'] = "#000000"
             colors['░'] = "#aaaaaa"
-            #  colors[' '] = "#9999ff"
-            #  colors['▁'] = "#0000ff"
-            #  colors['▂'] = "#0000e5"
-            #  colors['▃'] = "#0000cc"
-            #  colors['▄'] = "#0000b2"
-            #  colors['▅'] = "#000099"
-            #  colors['▆'] = "#00007f"
-            #  colors['▇'] = "#000066"
-            #  colors['█'] = "#00004c"
-            #  colors['░'] = "#dee3e8"
+            # colors[' '] = "#9999ff"
+            # colors['▁'] = "#0000ff"
+            # colors['▂'] = "#0000e5"
+            # colors['▃'] = "#0000cc"
+            # colors['▄'] = "#0000b2"
+            # colors['▅'] = "#000099"
+            # colors['▆'] = "#00007f"
+            # colors['▇'] = "#000066"
+            # colors['█'] = "#00004c"
+            # colors['░'] = "#dee3e8"
 
             arcs = {}
             arcs['→'] = (135, 90)

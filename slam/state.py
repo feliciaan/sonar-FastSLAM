@@ -27,6 +27,8 @@ class State:
 
 
     def update(self, update):
+        # print(update)
+
         # batch the sensor updates
         # 5 measurements --> 1 measurement
         BATCH_SIZE = 4
@@ -61,7 +63,7 @@ class State:
                 self.update_sensor(batch_update)
 
             print(update)
-            # input('enter to continue')
+           # input('enter to continue')
             self.update_motion(update)
             self.flush = False
 

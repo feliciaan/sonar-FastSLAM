@@ -36,8 +36,8 @@
 
 /********************* motor speeds ******************************************/
 #define SPEED 300
-#define LEFT_SUM (-25) // left is a bit slower, we adjust here
-
+//#define LEFT_SUM (-25) // left is a bit slower, we adjust here
+#define LEFT_SUM (-40)
 
 /********************* Sensor settings ***************************************/
 
@@ -53,7 +53,7 @@
 #define DIR_CHANGE_TIME 2500
 
 /********************* Angle settings *****************************************/
-#define ANGLE_10DEG 44
+#define ANGLE_30DEG 110
 #define ANGLE_45DEG 200
 
 /********************* Enable/disable output/input sending ********************/
@@ -86,7 +86,7 @@ ZumoMotors motors;
 SoftwareSerial bluetooth(BLUETOOTH_TXD, BLUETOOTH_RXD); // RX, TX
 
 int last_order; // what the loop executes
-
+int counter; // make sure the robot takes 3 samples every time when moving a bit forward
 
 // we keep track of the speeds and report those, each time they change, we send this on to bluetooth
 int old_left_speed, old_right_speed;
@@ -150,6 +150,10 @@ void setup() {
     delay(1000);
     halt();
   }
+  
+  // initialize counter to 1
+  counter = 0;
+  
 }
 
 /********************* Distance sensors ***************************************/
@@ -215,15 +219,15 @@ void send_sensor_data(int left, int front, int right) {
 
   send_serial = SERIAL_SENSOR_UPDATES || (send_sporadic && SERIAL_SPORADIC_SENSOR_UPDATE);
   if (send_serial) {
-    Serial.print("  L: ");
-    Serial.print(left);
-    Serial.print("cm\t");
-    Serial.print("  F: ");
-    Serial.print(front);
-    Serial.print("cm\t");
-    Serial.print("  R: ");
-    Serial.print(right);
-    Serial.print("cm\t");
+//    Serial.print("  L: ");
+//    Serial.print(left);
+//    Serial.print("cm\t");
+//    Serial.print("  F: ");
+//    Serial.print(front);
+//    Serial.print("cm\t");
+//    Serial.print("  R: ");
+//    Serial.print(right);
+//    Serial.print("cm\t");
   }
   send_time(send_serial, send_bluetooth);
 }
@@ -418,33 +422,41 @@ void timed_turn(const int dir, const int time_ms) {
 void loop() {
   long left, front, right;
   char new_order;
+  
+  while (counter > 0 ){
+    left  = read_distance_sensor(SENSL_TRIG, SENSL_ECHO);
+    front = read_distance_sensor(SENSF_TRIG, SENSF_ECHO);
+    right = read_distance_sensor(SENSR_TRIG, SENSR_ECHO);
 
-  left  = read_distance_sensor(SENSL_TRIG, SENSL_ECHO);
-  front = read_distance_sensor(SENSF_TRIG, SENSF_ECHO);
-  right = read_distance_sensor(SENSR_TRIG, SENSR_ECHO);
-
-  send_sensor_data(left, front, right);
-
+    send_sensor_data(left, front, right);
+    counter -= 1;
+    Serial.println(counter);
+  }
   new_order = receive_orders();
   if (new_order == '_') {
     // no order received this tick
     // the default order is 'halt', only if we are in auto mode, we continue auto mode
     if (last_order == 'A') {
       new_order = 'A';
+    }else if(last_order == 'w'){
+      new_order = 'w';
     }
   }
   last_order = new_order;
 
+
+  // normal conditions only one measurement needed
+  
   switch (last_order) {
-    case 'A': auto_move(left, front, right);  break;
-    case 'w': forward();    break; //delay(100);halt();
+    case 'A': auto_move(left, front, right);             break;
+    case 'w': forward();  delay(500); halt();            counter = 4; break; //
     case 's': backward();   break;  // delay(100);halt();
-    //case 'a': timed_turn(LEFT, ANGLE_10DEG);  break;
-    case 'a': timed_turn(RIGHT, ANGLE_45DEG);   break;
+    //case 'a': timed_turn(LEFT, ANGLE_45DEG);  break;
+    case 'a': timed_turn(RIGHT, ANGLE_30DEG);     counter = 4;       break;
     //case 'd': timed_turn(RIGHT, ANGLE_10DEG); break;
-    case 'd': timed_turn(LEFT, ANGLE_45DEG); break;
+    case 'd': timed_turn(LEFT, ANGLE_30DEG);      counter = 4;       break;
     case 't': test_motors();                  break;
-    case 'x':
+    case 'p': counter = 4; break; // sense before starting !
     case 'h': halt();                          break;
     // case ' ': halt();                         break;
     default : check_env(left, front, right);  break;

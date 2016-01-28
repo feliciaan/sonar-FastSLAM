@@ -34,6 +34,8 @@ def calc_weight(measurements, pose, map_):
                 # map => I don't know it ...
                 # OLD --> probability *= 1 / MAX_RANGE
                 # NEW --> don't touch the weight of the particle
+                # probability *= 1/MAX_RANGE
+                probability =0
                 None
 
             # find nearest neighbour that is occupied
@@ -42,11 +44,12 @@ def calc_weight(measurements, pose, map_):
                 sub = tsub((x_co, y_co), nearest_object)
                 distance = math.hypot(sub[0], sub[1])
                 prob = _prob_of_distances(distance, 0.0)
-                probability *= prob
+                probability += prob
 
         else:
             # TODO: if there is no measurement --> probability stays 1 ?
             # if sensor got OUT of range --> particle gets higher chance ??
+            probability = 0
             None
 
     return probability
@@ -165,7 +168,7 @@ def distance_to_closest_object_in_cone(map, pose, cone_width_angle, max_radius):
 
     # print (len(cells))
 
-    print('num_hits : ', num_hits)
+    # print('num_hits : ', num_hits)
     if num_hits > NUM_HITS_THRESHOLD:
         occupied = True
 
@@ -226,9 +229,10 @@ def update_map(measurements, pose, map_):
             map_.grid[empty_coords[:, 0], empty_coords[:, 1]] += _log_odds(PROBABILITY_FREE)
 
             non_empty_distances = distances[distances > cutoff]
-            max_dist = max(non_empty_distances)
+            if len(non_empty_distances) != 0 :
+                max_dist = max(non_empty_distances)
 
-            UNCERTAINTY_GRADIENT = 0.1  # below 0.5 please ...
+            UNCERTAINTY_GRADIENT = 0.1  # below 0.5
 
             non_empty_log_odds = []
             for i, entry in enumerate(non_empty_distances):
@@ -250,8 +254,8 @@ def update_map(measurements, pose, map_):
             # calculate
             MAX_RADIUS =70
             # MAX_RANGE = 150
-            print('Measured_dist : ', measured_dist)
-            print('sensor_angle : ', sensor_angle)
+            # print('Measured_dist : ', measured_dist)
+            # print('sensor_angle : ', sensor_angle)
             cell_coordinates = cell_coordinates[distances < MAX_RADIUS]
             occupied = distance_to_closest_object_in_cone(map_, sensor_pose, CONE_ANGLE, MAX_RADIUS)
             # print(found)

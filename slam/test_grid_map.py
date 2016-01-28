@@ -8,10 +8,11 @@ from hardware import Hardware
 from state import State
 
 
-hardware = Hardware("../test/ms2_triple_1.txt")
+hardware = Hardware("../test/live.txt")
 # /dev/tty.HC-06-DevB
 #
-# hardware = Hardware(serial_port='/dev/rfcomm0', output_file='../test/ms2_triple_1.txt', testfile='../test/test.txt')
+# hardware = Hardware(serial_port='/dev/rfcomm0', output_file='../test/live.txt')
+# , testfile='../test/live.txt'
 state = State(n_particles=150)
 
 

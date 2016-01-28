@@ -177,7 +177,7 @@ class Particle:
             self.weight = 1.0 / n_particles
 
     def update_motion(self, motion, timedelta):
-        self.pose = motion_model.calculate_pose(self.pose, motion, timedelta)
+        self.pose = motion_model.calculate_pose(self.pose, motion, timedelta, self.map)
         self.map.add_pose(self.pose)
 
     def update_sensor(self, update):

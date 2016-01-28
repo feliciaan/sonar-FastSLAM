@@ -1,4 +1,5 @@
 import math
+import numpy
 from pose import Pose
 from tuple_utils import tsub
 from grid_map import procentual_grid
@@ -113,7 +114,7 @@ def find_nearest_neighbor(map, position):
                             if proc_value_cell(map.grid[pos[0], pos[1]]) > NN_THRESHOLD:
                                 counter += 1
                                 return map.grid2cartesian(pos[0], pos[1])
-                # print('counter: ', counter)
+                                # print('counter: ', counter)
             distance += 1
         return None
 
@@ -126,34 +127,49 @@ def distance_to_closest_object_in_cone(map, pose, cone_width_angle, max_radius):
 
         Returns the pareto-front of (distance, log_odds). None-values are ignored
         """
+    # print('max_radius', max_radius)
 
     coors, distances = map.get_cone(pose, cone_width_angle, max_radius)
+
     # map.grid = procentual_grid(map.grid)
 
-    def snd(tupl):
-        (x, y) = tupl
-        return y
+    # def snd(tupl):
+    #     (x, y) = tupl
+    #     return y
 
     # cells = list(cells)
     # cells.sort(key=snd)
 
     cells = zip(coors, distances)
+    cells = sorted(cells, key = lambda t: t[1])
     # print (cells)
+    # print('hallo')
     # [ print(x) for x  in cells ]
     # exit()
 
-    found = []
-    curr_max = -1
+    OCC_THRESHOLD = 0.55
+    NUM_HITS_THRESHOLD = 20
+    # looks in the cone for NUM_HITS_THRESHOLD locations with occupancy
+    # probability higher than OCC_THRESHOLD
+
+    occupied = False
+    num_hits = 0
+
     for (cell, d) in cells:
         cell = map.get_cell(*cell)
-        if math.floor(cell * 10) == 5:
-            continue
-        if cell > curr_max:
-            curr_max = cell
-            found.append((d, cell))
+        value = proc_value_cell(cell)
+        # print('value : ', value)
+        if value > OCC_THRESHOLD:
+            # probs.append(value)
+            num_hits += 1
 
-    # print ("FOUND : ", found)
-    return found
+    # print (len(cells))
+
+    print('num_hits : ', num_hits)
+    if num_hits > NUM_HITS_THRESHOLD:
+        occupied = True
+
+    return occupied
 
 
 def _prob_of_distances(measured, expected):
@@ -170,18 +186,16 @@ def update_map(measurements, pose, map_):
     robot_pose = Pose(pose.x, pose.y, pose.theta)
     grid_index = map_.cartesian2grid(robot_pose.x, robot_pose.y)
 
-    robot_coords=[]
+    robot_coords = []
     PATH_WIDTH = 4
-    for i in range(-PATH_WIDTH, PATH_WIDTH+1, 1):
-        for j in range(-PATH_WIDTH, PATH_WIDTH+1, 1):
+    for i in range(-PATH_WIDTH, PATH_WIDTH + 1, 1):
+        for j in range(-PATH_WIDTH, PATH_WIDTH + 1, 1):
             pos = (grid_index[0] + i, grid_index[1] + j)
             if (map_.in_grid(pos)):
                 robot_coords.append(pos)
 
     for coords in robot_coords:
         map_.grid[coords[0], coords[1]] += _log_odds(PROBABILITY_FREE)
-
-
 
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
 
@@ -234,17 +248,20 @@ def update_map(measurements, pose, map_):
             # max reading
             # look if there is an obstacle on the map
             # calculate
-            # found = distance_to_closest_object_in_cone(map_, sensor_pose, CONE_ANGLE, 70)
+            MAX_RADIUS =70
+            # MAX_RANGE = 150
+            print('Measured_dist : ', measured_dist)
+            print('sensor_angle : ', sensor_angle)
+            cell_coordinates = cell_coordinates[distances < MAX_RADIUS]
+            occupied = distance_to_closest_object_in_cone(map_, sensor_pose, CONE_ANGLE, MAX_RADIUS)
             # print(found)
             #
             #
-            # if not found:
-            #      map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(PROBABILITY_FREE)
-            # else:
-            #     print(found)
-            #     print("GOOD")
-            #     exit()
-            None
+            if occupied:
+                SHORT_READING_PROB = 0.7
+                map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(SHORT_READING_PROB)
+            else:
+                map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(PROBABILITY_FREE)
 
             # if measurement and len(non_empty_coords) > 0:
             #    non_empty_log_odds = _log_odds(.5 + (.01 / (len(non_empty_coords) + 1)))

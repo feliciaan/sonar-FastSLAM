@@ -37,7 +37,7 @@
 /********************* motor speeds ******************************************/
 #define SPEED 300
 //#define LEFT_SUM (-25) // left is a bit slower, we adjust here
-#define LEFT_SUM (-39)
+#define LEFT_SUM (-40)
 
 /********************* Sensor settings ***************************************/
 
@@ -53,7 +53,7 @@
 #define DIR_CHANGE_TIME 2500
 
 /********************* Angle settings *****************************************/
-#define ANGLE_30DEG 80
+#define ANGLE_30DEG 70
 #define ANGLE_45DEG 200
 
 /********************* Enable/disable output/input sending ********************/

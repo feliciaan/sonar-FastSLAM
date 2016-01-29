@@ -156,6 +156,7 @@ class State:
     def copy_particle(self, old_p):
         p = Particle(self.n_particles, True)
         p.pose = Pose(old_p.pose.x, old_p.pose.y, old_p.pose.theta)
+        # Reset the weight of the particle after selection ??
         p.weight = old_p.weight
         p.map.minrange = old_p.map.minrange
         p.map.maxrange = old_p.map.maxrange

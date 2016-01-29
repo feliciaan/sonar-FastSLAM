@@ -16,17 +16,15 @@ WHEEL_RADIUS = 0.015  # m
 # GAUSSIAN NOISE
 GAUSSIAN_NOISE = True
 # local rotation
-ANGLE_GAUSS_TURNING = 0.02
+ANGLE_GAUSS_TURNING = 0.1
 # STRAIGHT line
 STRAIGHT_ANGLE = 0.02
-STRAIGHT_DIST = 0.02
+STRAIGHT_DIST = 0.1
 
 
 # radians during 1 angle turn depending on surface ...
 # 30 degrees for voltage = 4.3 volt
-RADIANS_DURING_1_turn = 0.52  # 0.54  # 40 degrees
-
-
+RADIANS_DURING_1_turn = 0.314  # 0.54  # 40 degrees
 
 
 
@@ -128,7 +126,7 @@ def calc_weight_sample(map, sample):
 
 def calc_weight_pose(map, pos):
 
-    WEIGHT_UNEXPLORED = 0
+    WEIGHT_UNEXPLORED = 1
     # print (pos)
     if (not map.in_grid(pos)):
         # sample not on map

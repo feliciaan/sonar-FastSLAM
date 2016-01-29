@@ -7,11 +7,11 @@ from grid_map import procentual_grid
 MAX_RANGE = 150  # In cm
 CONE_ANGLE = 0.872664626  # In radians
 PROBABILITY_FREE = 0.001
-RECOGNITION_SENSITIVITY = 10  # In cm
+RECOGNITION_SENSITIVITY = 1  # In cm
 
 
 def calc_weight(measurements, pose, map_):
-    probability = 1
+    probability = 0
     # return probability
 
     for sensor_angle, measured_dist in _measurement_per_angle(measurements):
@@ -30,12 +30,10 @@ def calc_weight(measurements, pose, map_):
             nearest_object = find_nearest_neighbor(map_, (x_co, y_co))
             # when sensor measurement falls into unknown category, prob is assumed constant p173
             if nearest_object == "unknown":
-                # measurement => there is something
-                # map => I don't know it ...
-                # OLD --> probability *= 1 / MAX_RANGE
-                # NEW --> don't touch the weight of the particle
-                # probability *= 1/MAX_RANGE
-                probability =0
+                # cell outside map
+                # cell prob = 0.5
+                # ==> measurement in unknown region
+                probability += 0.2
                 None
 
             # find nearest neighbour that is occupied
@@ -43,17 +41,64 @@ def calc_weight(measurements, pose, map_):
                 # calculate Euclidean distance between measured coord and closest occupied coord
                 sub = tsub((x_co, y_co), nearest_object)
                 distance = math.hypot(sub[0], sub[1])
-                prob = _prob_of_distances(distance, 0.0)
-                probability += prob
+                # prob = _prob_of_distances(distance, 0.0)
+                if distance < 5:
+                    # distance to closest object under threshold
+                    probability += 1
+                else:
+                    # distance to closest object to far away
+                    probability += 0
+
+            elif nearest_object is None:
+                # no object with prob > 0.9 around the cone top
+                probability += 0
 
         else:
-            # TODO: if there is no measurement --> probability stays 1 ?
-            # if sensor got OUT of range --> particle gets higher chance ??
-            probability = 0
-            None
+            # sensor got out of range value (short reading or free region)
+            probability += 1
 
-    return probability
 
+    #  calculate the region around the pose, if region is free this pose is more possible
+    grid_index = map_.cartesian2grid(pose.x, pose.y)
+    weight = 0
+    # look in a range around the sampled pose
+    RANGE = 4
+    for i in range(-RANGE, RANGE + 1, 1):
+        for j in range(-RANGE, RANGE + 1, 1):
+            pos = (grid_index[0] + i, grid_index[1] + j)
+            weight += calc_weight_pose(map_, pos)
+
+    # weight of the sensor measurement
+    # weight of the map correspondence
+    MAP_POSE_FACTOR = 1
+    MEASUREMENT_FACTOR = 30
+
+    # do something with weight
+    part1 = probability*MEASUREMENT_FACTOR
+    part2 = weight*MAP_POSE_FACTOR
+    print('part1 : {0}   part2: {1}'.format(part1, part2))
+    return part1 + part2
+
+
+
+def calc_weight_pose(map, pos):
+
+    # exploring new terain is punished
+    WEIGHT_UNEXPLORED = 0.5
+    # print (pos)
+    if (not map.in_grid(pos)):
+        # sample not on map
+        return WEIGHT_UNEXPLORED
+
+    cell = map.get_cell(pos[0], pos[1])
+    if proc_value_cell(cell) == 0.5:
+        # map point is unexplored
+        return WEIGHT_UNEXPLORED
+
+    # map point is explored
+    prob_cell_occupied = proc_value_cell(cell)
+    assert prob_cell_occupied >= 0, 'prob should be bigger than 0'
+    return (1-prob_cell_occupied)
 
 """
    value cell calculated as a value between 0 and 1
@@ -266,7 +311,7 @@ def update_map(measurements, pose, map_):
                 map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(SHORT_READING_PROB)
             else:
                 map_.grid[cell_coordinates[:, 0], cell_coordinates[:, 1]] += _log_odds(PROBABILITY_FREE)
-
+                None
             # if measurement and len(non_empty_coords) > 0:
             #    non_empty_log_odds = _log_odds(.5 + (.01 / (len(non_empty_coords) + 1)))
             #    map_.grid[non_empty_coords[:, 0], non_empty_coords[:, 1]] += non_empty_log_odds
